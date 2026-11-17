@@ -1,65 +1,71 @@
 import Foundation
-import UIKit
+
+// MARK: - TabModel
 
 public struct TabModel: Identifiable, Codable, Equatable, Sendable {
     public let id: UUID
     public var url: URL?
     public var title: String
+    public var customTitle: String?
+    public var spaceID: UUID
     public var isPinned: Bool
     public var isPrivate: Bool
-    public var spaceID: UUID
     public var lastAccessed: Date
-    public var createdAt: Date
     public var snapshotFileName: String?
+    public var isSecure: Bool
+    public var isDesktopMode: Bool
+    public var forcedDarkMode: Bool
 
     public init(
         id: UUID = UUID(),
         url: URL? = nil,
         title: String = "Nueva Pestaña",
+        customTitle: String? = nil,
+        spaceID: UUID = UUID(),
         isPinned: Bool = false,
         isPrivate: Bool = false,
-        spaceID: UUID,
         lastAccessed: Date = Date(),
-        createdAt: Date = Date(),
-        snapshotFileName: String? = nil
+        snapshotFileName: String? = nil,
+        isSecure: Bool = false,
+        isDesktopMode: Bool = false,
+        forcedDarkMode: Bool = false
     ) {
         self.id = id
         self.url = url
         self.title = title
+        self.customTitle = customTitle
+        self.spaceID = spaceID
         self.isPinned = isPinned
         self.isPrivate = isPrivate
-        self.spaceID = spaceID
         self.lastAccessed = lastAccessed
-        self.createdAt = createdAt
         self.snapshotFileName = snapshotFileName
+        self.isSecure = isSecure
+        self.isDesktopMode = isDesktopMode
+        self.forcedDarkMode = forcedDarkMode
     }
 
+    // MARK: - Computed Properties
+
     public var displayTitle: String {
-        if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title != "Nueva Pestaña" {
+        if let custom = customTitle, !custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return custom
+        }
+        if !title.isEmpty && title != "about:blank" {
             return title
         }
-        if let host = url?.host() {
+        if let host = url?.host {
             return host.replacingOccurrences(of: "www.", with: "")
         }
         return "Nueva Pestaña"
     }
 
     public var displayHost: String {
-        guard let host = url?.host() else { return "liquid://inicio" }
+        guard let host = url?.host else { return "liquid://inicio" }
         return host.replacingOccurrences(of: "www.", with: "")
     }
 
-    public var isSecure: Bool {
-        url?.scheme?.lowercased() == "https"
-    }
-
-    public static func == (lhs: TabModel, rhs: TabModel) -> Bool {
-        lhs.id == rhs.id &&
-        lhs.url == rhs.url &&
-        lhs.title == rhs.title &&
-        lhs.isPinned == rhs.isPinned &&
-        lhs.isPrivate == rhs.isPrivate &&
-        lhs.spaceID == rhs.spaceID &&
-        lhs.snapshotFileName == rhs.snapshotFileName
+    public var faviconURL: URL? {
+        guard let host = url?.host else { return nil }
+        return URL(string: "https://www.google.com/s2/favicons?domain=\(host)&sz=64")
     }
 }

@@ -1,6 +1,8 @@
 import Foundation
 import UIKit
 
+// MARK: - StorageEngine
+
 public final class StorageEngine: @unchecked Sendable {
     public static let shared = StorageEngine()
 
@@ -37,6 +39,8 @@ public final class StorageEngine: @unchecked Sendable {
     }
 
     private init() {}
+
+    // MARK: - Generic Persistence
 
     public func save<T: Encodable>(_ object: T, to fileName: String) {
         queue.async {
@@ -84,6 +88,8 @@ public final class StorageEngine: @unchecked Sendable {
         }
     }
 
+    // MARK: - Snapshot Disk Management
+
     public func saveSnapshot(image: UIImage, for tabID: UUID) -> String {
         let fileName = "tab_\(tabID.uuidString).jpg"
         let fileURL = snapshotsDirectory.appendingPathComponent(fileName)
@@ -120,6 +126,8 @@ public final class StorageEngine: @unchecked Sendable {
         }
     }
 
+    // MARK: - Downloads Target Calculation
+
     public func downloadDestinationURL(suggestedFileName: String) -> URL {
         var destination = downloadsDirectory.appendingPathComponent(suggestedFileName)
         var counter = 1
@@ -134,11 +142,30 @@ public final class StorageEngine: @unchecked Sendable {
         return destination
     }
 
+    // MARK: - Pinned Tabs Logic (Poner Primero / Mover a Index 0)
+
+    public func pinTabToTop(tabID: UUID, in tabs: inout [TabModel]) {
+        guard let idx = tabs.firstIndex(where: { $0.id == tabID }) else { return }
+        var tab = tabs.remove(at: idx)
+        tab.isPinned = true
+        tabs.insert(tab, at: 0)
+        save(tabs, to: "tabs.json")
+    }
+
+    public func unpinTab(tabID: UUID, in tabs: inout [TabModel]) {
+        guard let idx = tabs.firstIndex(where: { $0.id == tabID }) else { return }
+        tabs[idx].isPinned = false
+        save(tabs, to: "tabs.json")
+    }
+
+    // MARK: - Clear All User Data
+
     public func clearAllUserData() {
         cleanAllSnapshots()
         delete(fileName: "tabs.json")
         delete(fileName: "spaces.json")
         delete(fileName: "history.json")
+        delete(fileName: "search_history.json")
         delete(fileName: "bookmarks.json")
         delete(fileName: "bookmark_folders.json")
         delete(fileName: "downloads.json")
