@@ -1,53 +1,76 @@
 import SwiftUI
 import WebKit
 
-// MARK: - BrowserRootView (Contenedor Maestro de Navegación)
+// MARK: - BrowserRootView (Master Navigation Container)
 
 public struct BrowserRootView: View {
-    @State private var coordinator = WebEngineCoordinator.shared
+    @Environment(\.colorScheme) private var systemColorScheme
 
-    @State private var isShowingTabsGrid: Bool = false
-    @State private var isShowingToolsMenu: Bool = false
+    @State private var coordinator = WebEngineCoordinator.shared
+    @State private var storage = StorageEngine.shared
+
+    // Hojas y Navegación
+    @State private var isShowingSpacesCarousel: Bool = false
+    @State private var isShowingToolsSheet: Bool = false
+    @State private var isShowingProfileSwitcher: Bool = false
+    @State private var isShowingSSLInspector: Bool = false
     @State private var isShowingFindInPage: Bool = false
 
-    // Modales y Hojas
+    // Hojas de Herramientas
     @State private var isShowingHistory: Bool = false
     @State private var isShowingBookmarks: Bool = false
     @State private var isShowingDownloads: Bool = false
     @State private var isShowingSettings: Bool = false
     @State private var isShowingQR: Bool = false
+    @State private var isShowingPasswordVault: Bool = false
+    @State private var isShowingAntiSpyDashboard: Bool = false
+    @State private var isShowingCredits: Bool = false
     @State private var readerArticle: ReaderArticle? = nil
     @State private var shareSheetItem: Any? = nil
 
+    // Búsqueda en Página
     @State private var findSearchText: String = ""
     @State private var findCurrentMatch: Int = 0
     @State private var findTotalMatches: Int = 0
-
-    @Environment(\.colorScheme) private var colorScheme
 
     public init() {}
 
     public var body: some View {
         let theme = ThemeManager.shared
+        let scheme = theme.effectiveScheme(systemScheme: systemColorScheme)
+        let activeTab = storage.activeTab
 
         ZStack(alignment: .bottom) {
-            theme.background(for: colorScheme)
+            // Fondo
+            theme.background(for: scheme)
                 .ignoresSafeArea()
 
-            // Contenedor Web o Pantalla de Inicio NewTabHomeView
-            if let activeTab = coordinator.activeTab {
-                if let url = activeTab.url, url.absoluteString != "about:blank" && !url.absoluteString.isEmpty {
-                    activeWebContainer(for: activeTab)
+            // 1. Contenedor Web Directo o Pantalla de Inicio
+            VStack(spacing: 0) {
+                if let tab = activeTab, !tab.isNewTab {
+                    // CONTENEDOR 100% LIBRE DE OVERLAYS - TOQUES DIRECTOS AL WKWEBVIEW
+                    activeWebContainer(for: tab)
                         .ignoresSafeArea(.container, edges: .top)
                 } else {
-                    NewTabHomeView(coordinator: coordinator)
+                    SmartHomeDashboardView(
+                        onSelectQuery: { query in
+                            coordinator.navigate(to: query)
+                        },
+                        onSelectURL: { url in
+                            coordinator.loadURL(url)
+                        },
+                        onOpenProfileSwitcher: {
+                            isShowingProfileSwitcher = true
+                        }
+                    )
                 }
-            } else {
-                NewTabHomeView(coordinator: coordinator)
+
+                // Espacio reservado para la barra inferior fija
+                Spacer(minLength: 0)
             }
 
-            // Barra Flotante Inferior SIEMPRE FIJA (nunca se oculta al hacer scroll)
-            VStack(spacing: 8) {
+            // 2. Barra Inferior Fija de Apple Safari (Full-width Search + Controls)
+            VStack(spacing: 6) {
                 if isShowingFindInPage {
                     FindInPageBar(
                         searchText: $findSearchText,
@@ -65,32 +88,42 @@ public struct BrowserRootView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
 
-                FloatingGlassCapsule(
+                AppleSafariBottomBar(
                     coordinator: coordinator,
-                    onOpenTabs: {
-                        HapticManager.shared.touchLight()
-                        coordinator.captureSnapshotForActiveTab()
-                        withAnimation(LiquidAnimation.interactiveSpring) {
-                            isShowingTabsGrid = true
-                        }
+                    onOpenSSLInspector: {
+                        coordinator.triggerSSLInspection()
+                        isShowingSSLInspector = true
                     },
                     onOpenTools: {
-                        HapticManager.shared.touchLight()
-                        isShowingToolsMenu = true
+                        isShowingToolsSheet = true
+                    },
+                    onOpenSpaces: {
+                        isShowingSpacesCarousel = true
+                    },
+                    onNewTab: {
+                        _ = coordinator.createNewTab()
                     }
                 )
             }
-            .padding(.bottom, 8)
         }
-        .fullScreenCover(isPresented: $isShowingTabsGrid) {
-            SpacesTabGridView(coordinator: coordinator) {
-                withAnimation(LiquidAnimation.interactiveSpring) {
-                    isShowingTabsGrid = false
+        // --- SHEETS Y MODALES NATIVAS ---
+        .sheet(isPresented: $isShowingSSLInspector) {
+            if let sslInfo = coordinator.currentSSLInfo {
+                SecurityInspectorSheet(info: sslInfo) { domain in
+                    coordinator.reload()
                 }
+            } else {
+                SecurityInspectorSheet(info: SSLCertificateInfo.placeholder(domain: activeTab?.displayHost ?? "Web"))
             }
         }
-        .sheet(isPresented: $isShowingToolsMenu) {
-            toolsMenuCompactSheet
+        .sheet(isPresented: $isShowingSpacesCarousel) {
+            SpacesCarouselView(coordinator: coordinator)
+        }
+        .sheet(isPresented: $isShowingProfileSwitcher) {
+            ProfileSwitcherSheet()
+        }
+        .sheet(isPresented: $isShowingToolsSheet) {
+            toolsMenuCompactSheet(theme: theme, scheme: scheme)
         }
         .sheet(isPresented: $isShowingHistory) {
             HistoryView { url in
@@ -125,241 +158,165 @@ public struct BrowserRootView: View {
         )) { actItem in
             ActivityShareSheet(activityItems: [actItem.item])
         }
-        .onAppear {
-            if let active = coordinator.activeTab {
-                coordinator.selectTab(id: active.id)
-            }
-        }
     }
 
-    // MARK: - Active Web Container
+    // MARK: - Contenedor Web Directo (Cero Bloqueo Táctil)
 
     @ViewBuilder
     private func activeWebContainer(for tab: TabModel) -> some View {
         let webView = TabPoolManager.shared.webView(for: tab)
-
-        ZStack {
-            WebViewWrapper(webView: webView)
-
-            GestureNavigationOverlay(
-                webView: webView,
-                onEdgeBack: { coordinator.goBack() },
-                onEdgeForward: { coordinator.goForward() }
-            )
-        }
+        WebViewWrapper(webView: webView)
     }
 
-    // MARK: - Tools Menu Compact Sheet
+    // MARK: - Menú de Herramientas Compacto
 
     @ViewBuilder
-    private var toolsMenuCompactSheet: some View {
-        let theme = ThemeManager.shared
-
-        NavigationView {
+    private func toolsMenuCompactSheet(theme: ThemeManager, scheme: ColorScheme) -> some View {
+        NavigationStack {
             ZStack {
-                theme.background(for: colorScheme)
-                    .ignoresSafeArea()
+                theme.background(for: scheme).ignoresSafeArea()
 
                 List {
-                    // SECCIÓN: NAVEGACIÓN Y LECTURA
+                    // Sección 1: Lectura y Utilidades de Página
                     Section {
-                        Button(action: {
-                            isShowingToolsMenu = false
+                        Button {
+                            isShowingToolsSheet = false
                             coordinator.extractReaderArticle { article in
                                 DispatchQueue.main.async {
                                     self.readerArticle = article
                                 }
                             }
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.readerMode, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Modo Lectura")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
+                        } label: {
+                            toolsRow(icon: .readerMode, title: "Modo Lectura", theme: theme, scheme: scheme)
                         }
 
-                        Button(action: {
-                            isShowingToolsMenu = false
+                        Button {
+                            isShowingToolsSheet = false
                             withAnimation(LiquidAnimation.interactiveSpring) {
                                 isShowingFindInPage = true
                             }
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.search, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Buscar en la página")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
+                        } label: {
+                            toolsRow(icon: .search, title: "Buscar en la página", theme: theme, scheme: scheme)
                         }
 
-                        Button(action: {
-                            isShowingToolsMenu = false
-                            guard let tab = coordinator.activeTab else { return }
-                            let wv = TabPoolManager.shared.webView(for: tab)
-                            DarkModeCSSInjector.toggleDarkMode(on: wv, enabled: true)
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.sliderAdjust, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Modo Oscuro Forzado")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
-                        }
-                    } header: {
-                        Text("Página actual")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.textSecondary(for: colorScheme))
-                    }
-                    .listRowBackground(theme.cardBackground(for: colorScheme))
-
-                    // SECCIÓN: BIBLIOTECA
-                    Section {
-                        Button(action: {
-                            isShowingToolsMenu = false
-                            isShowingBookmarks = true
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.bookmark, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Marcadores")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
+                        Button {
+                            isShowingToolsSheet = false
+                            coordinator.toggleDarkMode()
+                        } label: {
+                            toolsRow(icon: .palette, title: coordinator.isDarkModeInjected ? "Desactivar Modo Oscuro Forzado" : "Activar Modo Oscuro Forzado", theme: theme, scheme: scheme)
                         }
 
-                        Button(action: {
-                            isShowingToolsMenu = false
-                            isShowingHistory = true
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.history, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Historial de visitas y búsquedas")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
-                        }
-
-                        Button(action: {
-                            isShowingToolsMenu = false
-                            isShowingDownloads = true
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.download, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Descargas")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
-                        }
-                    } header: {
-                        Text("Biblioteca")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.textSecondary(for: colorScheme))
-                    }
-                    .listRowBackground(theme.cardBackground(for: colorScheme))
-
-                    // SECCIÓN: COMPARTIR Y ACCIONES
-                    Section {
-                        Button(action: {
-                            isShowingToolsMenu = false
+                        Button {
+                            isShowingToolsSheet = false
                             isShowingQR = true
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.qrCode, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Código QR")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
+                        } label: {
+                            toolsRow(icon: .qrCode, title: "Generar Código QR", theme: theme, scheme: scheme)
                         }
 
-                        Button(action: {
-                            isShowingToolsMenu = false
-                            exportPageToPDF()
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.share, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Exportar a PDF")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
+                        Button {
+                            isShowingToolsSheet = false
+                            exportPDF()
+                        } label: {
+                            toolsRow(icon: .pdfExport, title: "Exportar como PDF", theme: theme, scheme: scheme)
                         }
-
-                        Button(action: {
-                            isShowingToolsMenu = false
-                            isShowingSettings = true
-                        }) {
-                            HStack(spacing: 12) {
-                                LiquidIconView(.settings, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Ajustes")
-                                    .font(.system(size: 15, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                            }
-                        }
-                    } header: {
-                        Text("Acciones")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
-                    .listRowBackground(theme.cardBackground(for: colorScheme))
+
+                    // Sección 2: Navegación y Datos
+                    Section {
+                        Button {
+                            isShowingToolsSheet = false
+                            isShowingHistory = true
+                        } label: {
+                            toolsRow(icon: .history, title: "Historial de Navegación", theme: theme, scheme: scheme)
+                        }
+
+                        Button {
+                            isShowingToolsSheet = false
+                            isShowingBookmarks = true
+                        } label: {
+                            toolsRow(icon: .bookmarks, title: "Marcadores", theme: theme, scheme: scheme)
+                        }
+
+                        Button {
+                            isShowingToolsSheet = false
+                            isShowingDownloads = true
+                        } label: {
+                            toolsRow(icon: .downloads, title: "Descargas", theme: theme, scheme: scheme)
+                        }
+                    }
+
+                    // Sección 3: Compartir y Ajustes
+                    Section {
+                        Button {
+                            isShowingToolsSheet = false
+                            if let url = URL(string: coordinator.currentURLString) {
+                                self.shareSheetItem = url
+                            }
+                        } label: {
+                            toolsRow(icon: .share, title: Loc.tr("bar_share"), theme: theme, scheme: scheme)
+                        }
+
+                        Button {
+                            isShowingToolsSheet = false
+                            isShowingSettings = true
+                        } label: {
+                            toolsRow(icon: .settings, title: Loc.tr("settings_title"), theme: theme, scheme: scheme)
+                        }
+                    }
                 }
+                .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Herramientas")
+            .navigationTitle(Loc.tr("bar_tools"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cerrar") {
-                        HapticManager.shared.touchLight()
-                        isShowingToolsMenu = false
-                    }
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundStyle(theme.textPrimary(for: colorScheme))
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(Loc.tr("done")) { isShowingToolsSheet = false }
+                        .foregroundStyle(theme.textPrimary(for: scheme))
                 }
             }
         }
     }
 
-    // MARK: - Actions
+    @ViewBuilder
+    private func toolsRow(icon: LiquidIconType, title: String, theme: ThemeManager, scheme: ColorScheme) -> some View {
+        HStack(spacing: 14) {
+            LiquidIconView(icon, size: 18, color: theme.textPrimary(for: scheme))
+            Text(title)
+                .font(.system(size: 15, weight: .regular, design: .rounded))
+                .foregroundStyle(theme.textPrimary(for: scheme))
+            Spacer()
+        }
+    }
 
-    private func exportPageToPDF() {
-        guard let tab = coordinator.activeTab else { return }
+    private func exportPDF() {
+        guard let tab = storage.activeTab else { return }
         let wv = TabPoolManager.shared.webView(for: tab)
-        FullPagePDFExporter.exportPDF(from: wv) { fileURL in
+        FullPagePDFExporter.export(webView: wv) { url in
             DispatchQueue.main.async {
-                self.shareSheetItem = fileURL
+                if let fileURL = url {
+                    self.shareSheetItem = fileURL
+                }
             }
         }
     }
 
     private func searchNextInPage() {
-        guard let tab = coordinator.activeTab, !findSearchText.isEmpty else { return }
+        guard let tab = storage.activeTab else { return }
         let wv = TabPoolManager.shared.webView(for: tab)
-        let js = "window.find('\(findSearchText)', false, false, true);"
+        let js = "window.find('\(findSearchText)', false, false, true, false, false, false);"
         wv.evaluateJavaScript(js)
     }
 
     private func searchPrevInPage() {
-        guard let tab = coordinator.activeTab, !findSearchText.isEmpty else { return }
+        guard let tab = storage.activeTab else { return }
         let wv = TabPoolManager.shared.webView(for: tab)
-        let js = "window.find('\(findSearchText)', false, true, true);"
+        let js = "window.find('\(findSearchText)', false, true, true, false, false, false);"
         wv.evaluateJavaScript(js)
     }
 }
 
-// MARK: - ReaderArticleWrapper
-
-public struct ReaderArticleWrapper: Identifiable {
-    public let id = UUID()
-    public let article: ReaderArticle
-}
-
-// MARK: - IdentifiableActivityItem
-
-public struct IdentifiableActivityItem: Identifiable {
-    public let id = UUID()
-    public let item: Any
-}
-
-// MARK: - WebViewWrapper
+// MARK: - WebViewWrapper (Direct UIViewRepresentable for WKWebView)
 
 public struct WebViewWrapper: UIViewRepresentable {
     public let webView: WKWebView
@@ -369,8 +326,44 @@ public struct WebViewWrapper: UIViewRepresentable {
     }
 
     public func makeUIView(context: Context) -> WKWebView {
-        webView
+        return webView
     }
 
     public func updateUIView(_ uiView: WKWebView, context: Context) {}
+}
+
+// MARK: - ReaderArticleWrapper & IdentifiableActivityItem
+
+public struct ReaderArticleWrapper: Identifiable {
+    public let id = UUID()
+    public let article: ReaderArticle
+
+    public init(article: ReaderArticle) {
+        self.article = article
+    }
+}
+
+public struct IdentifiableActivityItem: Identifiable {
+    public let id = UUID()
+    public let item: Any
+
+    public init(item: Any) {
+        self.item = item
+    }
+}
+
+// MARK: - ActivityShareSheet
+
+public struct ActivityShareSheet: UIViewControllerRepresentable {
+    public let activityItems: [Any]
+
+    public init(activityItems: [Any]) {
+        self.activityItems = activityItems
+    }
+
+    public func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    public func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
