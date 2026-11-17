@@ -1,9 +1,9 @@
 import SwiftUI
 
-// MARK: - DownloadsView (Monochrome Liquid Glass)
+// MARK: - DownloadsView (Gestor de Descargas Monocromo en Cristal)
 
 public struct DownloadsView: View {
-    @State private var downloads: [DownloadItem] = []
+    @State private var downloadManager = DownloadManager.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @State private var sharingURL: URL? = nil
@@ -11,17 +11,17 @@ public struct DownloadsView: View {
     public init() {}
 
     public var body: some View {
-        let theme = ThemeEngine.shared
+        let theme = ThemeManager.shared
 
         NavigationView {
             ZStack {
                 theme.background(for: colorScheme)
                     .ignoresSafeArea()
 
-                if downloads.isEmpty {
-                    emptyDownloadsView
+                if downloadManager.downloads.isEmpty {
+                    emptyDownloadsView(theme: theme)
                 } else {
-                    downloadsListView
+                    downloadsListView(theme: theme)
                 }
             }
             .navigationTitle("Descargas")
@@ -36,20 +36,17 @@ public struct DownloadsView: View {
                     .foregroundStyle(theme.textPrimary(for: colorScheme))
                 }
 
-                if !downloads.isEmpty {
+                if !downloadManager.downloads.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Limpiar") {
                             HapticManager.shared.touchMedium()
-                            clearCompleted()
+                            clearFinishedDownloads()
                         }
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
                 }
             }
-        }
-        .onAppear {
-            loadDownloads()
         }
         .sheet(item: Binding<IdentifiableURL?>(
             get: { sharingURL.map { IdentifiableURL(url: $0) } },
@@ -62,9 +59,7 @@ public struct DownloadsView: View {
     // MARK: - Subviews
 
     @ViewBuilder
-    private var emptyDownloadsView: some View {
-        let theme = ThemeEngine.shared
-
+    private func emptyDownloadsView(theme: ThemeManager) -> some View {
         VStack(spacing: 16) {
             LiquidIconView(.download, size: 48, color: theme.textSecondary(for: colorScheme).opacity(0.6))
 
@@ -72,7 +67,7 @@ public struct DownloadsView: View {
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(theme.textPrimary(for: colorScheme))
 
-            Text("Los archivos descargados aparecerán aquí con su estado y tamaño.")
+            Text("Los archivos descargados aparecerán aquí con su estado, tamaño y opciones de guardado.")
                 .font(.system(size: 14, design: .rounded))
                 .foregroundStyle(theme.textSecondary(for: colorScheme))
                 .multilineTextAlignment(.center)
@@ -81,39 +76,33 @@ public struct DownloadsView: View {
     }
 
     @ViewBuilder
-    private var downloadsListView: some View {
-        let theme = ThemeEngine.shared
-
+    private func downloadsListView(theme: ThemeManager) -> some View {
         List {
-            ForEach(downloads) { item in
-                downloadRow(for: item)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(theme.specularBorder(for: colorScheme))
+            ForEach(downloadManager.downloads) { item in
+                downloadRow(for: item, theme: theme)
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
-                            deleteItem(item)
+                            downloadManager.cancelDownload(id: item.id)
                         } label: {
                             Label("Eliminar", systemImage: "trash")
                         }
                     }
             }
         }
-        .listStyle(.plain)
         .scrollContentBackground(.hidden)
     }
 
     @ViewBuilder
-    private func downloadRow(for item: DownloadItem) -> some View {
-        let theme = ThemeEngine.shared
-
+    private func downloadRow(for item: DownloadItem, theme: ThemeManager) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(theme.cardBackground(for: colorScheme))
-                        .frame(width: 40, height: 40)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(theme.surfaceElevated(for: colorScheme))
+                        .frame(width: 44, height: 44)
                         .overlay {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .strokeBorder(theme.specularBorder(for: colorScheme), lineWidth: 0.5)
                         }
 
@@ -133,15 +122,19 @@ public struct DownloadsView: View {
 
                         Text("•")
                             .font(.system(size: 10))
-                            .foregroundStyle(theme.textSecondary(for: colorScheme))
+                            .foregroundStyle(theme.textTertiary(for: colorScheme))
 
-                        stateBadge(for: item.state)
+                        Text(stateText(for: item.state))
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
                 }
 
                 Spacer()
 
-                if case .completed(let path) = item.state {
+                // Acción según el estado
+                switch item.state {
+                case .completed(let path):
                     Button(action: {
                         HapticManager.shared.touchLight()
                         let fileURL = StorageEngine.shared.downloadsDirectory.appendingPathComponent(path)
@@ -149,12 +142,25 @@ public struct DownloadsView: View {
                     }) {
                         LiquidIconView(.share, size: 16, color: theme.textPrimary(for: colorScheme))
                             .padding(8)
-                            .background(theme.cardBackground(for: colorScheme))
+                            .background(theme.surfaceElevated(for: colorScheme))
                             .clipShape(Circle())
-                            .overlay {
-                                Circle().strokeBorder(theme.specularBorder(for: colorScheme), lineWidth: 0.5)
-                            }
                     }
+                case .downloading:
+                    Button(action: {
+                        downloadManager.pauseDownload(id: item.id)
+                    }) {
+                        LiquidIconView(.stop, size: 14, color: theme.textSecondary(for: colorScheme))
+                            .padding(8)
+                    }
+                case .paused:
+                    Button(action: {
+                        downloadManager.resumeDownload(id: item.id)
+                    }) {
+                        LiquidIconView(.renewTab, size: 14, color: theme.textPrimary(for: colorScheme))
+                            .padding(8)
+                    }
+                default:
+                    EmptyView()
                 }
             }
 
@@ -177,44 +183,18 @@ public struct DownloadsView: View {
             return "En pausa"
         case .completed:
             return "Completado"
-        case .failed:
-            return "Error"
+        case .failed(let err):
+            return "Error: \(err)"
         }
     }
 
-    private func stateBadge(for state: DownloadState) -> some View {
-        let theme = ThemeEngine.shared
-        return Text(stateText(for: state))
-            .font(.system(size: 11, weight: .medium, design: .rounded))
-            .foregroundStyle(theme.textSecondary(for: colorScheme))
-    }
-
-    // MARK: - Actions
-
-    private func loadDownloads() {
-        if let stored: [DownloadItem] = StorageEngine.shared.loadJSON(from: "downloads.json") {
-            self.downloads = stored
-        }
-    }
-
-    private func deleteItem(_ item: DownloadItem) {
-        HapticManager.shared.touchLight()
-        downloads.removeAll { $0.id == item.id }
-        StorageEngine.shared.saveJSON(downloads, to: "downloads.json")
-
-        if case .completed(let relPath) = item.state {
-            let fileURL = StorageEngine.shared.downloadsDirectory.appendingPathComponent(relPath)
-            try? FileManager.default.removeItem(at: fileURL)
-        }
-    }
-
-    private func clearCompleted() {
-        downloads.removeAll { $0.state.isTerminal }
-        StorageEngine.shared.saveJSON(downloads, to: "downloads.json")
+    private func clearFinishedDownloads() {
+        downloadManager.downloads.removeAll { $0.state.isTerminal }
+        downloadManager.saveDownloads()
     }
 }
 
-// MARK: - IdentifiableURL Helper
+// MARK: - IdentifiableURL
 
 public struct IdentifiableURL: Identifiable {
     public let id = UUID()
