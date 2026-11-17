@@ -102,41 +102,15 @@ public struct SpacesTabGridView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(coordinator.spaces) { space in
-                    let isSelected = (coordinator.activeSpaceID == space.id)
-                    let iconType = LiquidIconType(rawValue: space.iconTypeRaw) ?? .spaceFolder
-
-                    Button(action: {
-                        HapticManager.shared.selectionChanged()
-                        coordinator.activeSpaceID = space.id
-                    }) {
-                        HStack(spacing: 8) {
-                            LiquidIconView(
-                                iconType,
-                                size: 14,
-                                color: isSelected ? (colorScheme == .dark ? Color.black : Color.white) : ThemeEngine.shared.textPrimary(for: colorScheme)
-                            )
-
-                            Text(space.name)
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundStyle(
-                                    isSelected ? (colorScheme == .dark ? Color.black : Color.white) : ThemeEngine.shared.textPrimary(for: colorScheme)
-                                )
+                    SpacePillItem(
+                        space: space,
+                        isSelected: coordinator.activeSpaceID == space.id,
+                        colorScheme: colorScheme,
+                        action: {
+                            HapticManager.shared.selectionChanged()
+                            coordinator.activeSpaceID = space.id
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(isSelected ? (colorScheme == .dark ? Color.white : Color.black) : Color.white.opacity(colorScheme == .dark ? 0.06 : 0.60))
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(
-                                    isSelected ? Color.clear : ThemeEngine.shared.borderSpecular(for: colorScheme),
-                                    lineWidth: 0.5
-                                )
-                        }
-                    }
-                    .pressableFeedback()
+                    )
                 }
 
                 Button(action: {
@@ -293,9 +267,7 @@ public struct SpacesTabGridView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(
-                        isSelected ?
-                        (colorScheme == .dark ? Color.white : Color.black) :
-                        theme.borderSpecular(for: colorScheme),
+                        tabCardBorder(isSelected: isSelected, theme: theme),
                         lineWidth: isSelected ? 1.5 : 0.5
                     )
             }
@@ -363,5 +335,53 @@ public struct SpacesTabGridView: View {
             }
             .pressableFeedback()
         }
+    }
+
+    private func tabCardBorder(isSelected: Bool, theme: ThemeEngine) -> AnyShapeStyle {
+        if isSelected {
+            return AnyShapeStyle(colorScheme == .dark ? Color.white : Color.black)
+        } else {
+            return AnyShapeStyle(theme.borderSpecular(for: colorScheme))
+        }
+    }
+}
+
+// MARK: - SpacePillItem
+
+private struct SpacePillItem: View {
+    let space: SpaceModel
+    let isSelected: Bool
+    let colorScheme: ColorScheme
+    let action: () -> Void
+
+    var body: some View {
+        let theme = ThemeEngine.shared
+        let iconType = LiquidIconType(rawValue: space.iconTypeRaw) ?? .spaceFolder
+        let fgColor = isSelected ? (colorScheme == .dark ? Color.black : Color.white) : theme.textPrimary(for: colorScheme)
+        let bgColor = isSelected ? (colorScheme == .dark ? Color.white : Color.black) : Color.white.opacity(colorScheme == .dark ? 0.06 : 0.60)
+
+        Button(action: action) {
+            HStack(spacing: 8) {
+                LiquidIconView(iconType, size: 14, color: fgColor)
+
+                Text(space.name)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(fgColor)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(bgColor)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? AnyShapeStyle(Color.clear) : AnyShapeStyle(theme.borderSpecular(for: colorScheme)),
+                        lineWidth: 0.5
+                    )
+            }
+        }
+        .pressableFeedback()
     }
 }

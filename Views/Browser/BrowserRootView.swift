@@ -176,7 +176,7 @@ public struct BrowserRootView: View {
                         Button(action: {
                             isShowingToolsMenu = false
                             coordinator.extractReaderArticle { article in
-                                if let article = article {
+                                DispatchQueue.main.async {
                                     self.readerArticle = article
                                 }
                             }
@@ -334,7 +334,7 @@ public struct BrowserRootView: View {
         guard let tab = coordinator.activeTab else { return }
         let wv = TabPoolManager.shared.webView(for: tab)
         FullPagePDFExporter.exportPDF(from: wv) { fileURL in
-            if let fileURL = fileURL {
+            DispatchQueue.main.async {
                 self.shareSheetItem = fileURL
             }
         }

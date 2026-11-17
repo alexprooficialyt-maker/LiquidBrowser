@@ -83,7 +83,7 @@ public struct CreateSpaceSheet: View {
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                                             .strokeBorder(
-                                                isSelected ? Color.clear : theme.borderSpecular(for: colorScheme),
+                                                isSelected ? AnyShapeStyle(Color.clear) : AnyShapeStyle(theme.borderSpecular(for: colorScheme)),
                                                 lineWidth: 0.5
                                             )
                                     }

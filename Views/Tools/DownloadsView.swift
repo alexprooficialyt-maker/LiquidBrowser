@@ -167,24 +167,24 @@ public struct DownloadsView: View {
         .padding(.vertical, 6)
     }
 
-    @ViewBuilder
-    private func stateBadge(for state: DownloadState) -> some View {
-        let theme = ThemeEngine.shared
-        let text: String
+    private func stateText(for state: DownloadState) -> String {
         switch state {
         case .queued:
-            text = "En cola"
+            return "En cola"
         case .downloading(let p):
-            text = "\(Int(p * 100))%"
+            return "\(Int(p * 100))%"
         case .paused:
-            text = "En pausa"
+            return "En pausa"
         case .completed:
-            text = "Completado"
+            return "Completado"
         case .failed:
-            text = "Error"
+            return "Error"
         }
+    }
 
-        Text(text)
+    private func stateBadge(for state: DownloadState) -> some View {
+        let theme = ThemeEngine.shared
+        return Text(stateText(for: state))
             .font(.system(size: 11, weight: .medium, design: .rounded))
             .foregroundStyle(theme.textSecondary(for: colorScheme))
     }

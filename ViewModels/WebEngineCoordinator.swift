@@ -128,6 +128,10 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
         }
     }
 
+    public func loadURL(_ url: URL) {
+        navigate(to: url.absoluteString)
+    }
+
     public func reload() {
         guard let activeTab = activeTab else { return }
         let webView = TabPoolManager.shared.webView(for: activeTab)
