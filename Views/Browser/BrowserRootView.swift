@@ -1,6 +1,8 @@
 import SwiftUI
 import WebKit
 
+// MARK: - BrowserRootView (Contenedor Maestro de Navegación)
+
 public struct BrowserRootView: View {
     @State private var coordinator = WebEngineCoordinator.shared
 
@@ -8,7 +10,7 @@ public struct BrowserRootView: View {
     @State private var isShowingToolsMenu: Bool = false
     @State private var isShowingFindInPage: Bool = false
 
-    // Modals
+    // Modales y Hojas
     @State private var isShowingHistory: Bool = false
     @State private var isShowingBookmarks: Bool = false
     @State private var isShowingDownloads: Bool = false
@@ -26,19 +28,25 @@ public struct BrowserRootView: View {
     public init() {}
 
     public var body: some View {
-        let theme = ThemeEngine.shared
+        let theme = ThemeManager.shared
 
         ZStack(alignment: .bottom) {
             theme.background(for: colorScheme)
                 .ignoresSafeArea()
 
+            // Contenedor Web o Pantalla de Inicio NewTabHomeView
             if let activeTab = coordinator.activeTab {
-                activeWebContainer(for: activeTab)
-                    .ignoresSafeArea(.container, edges: .top)
+                if let url = activeTab.url, url.absoluteString != "about:blank" && !url.absoluteString.isEmpty {
+                    activeWebContainer(for: activeTab)
+                        .ignoresSafeArea(.container, edges: .top)
+                } else {
+                    NewTabHomeView(coordinator: coordinator)
+                }
             } else {
-                emptyStateRootView
+                NewTabHomeView(coordinator: coordinator)
             }
 
+            // Barra Flotante Inferior SIEMPRE FIJA (nunca se oculta al hacer scroll)
             VStack(spacing: 8) {
                 if isShowingFindInPage {
                     FindInPageBar(
@@ -124,7 +132,7 @@ public struct BrowserRootView: View {
         }
     }
 
-    // MARK: - Active Web View
+    // MARK: - Active Web Container
 
     @ViewBuilder
     private func activeWebContainer(for tab: TabModel) -> some View {
@@ -141,29 +149,11 @@ public struct BrowserRootView: View {
         }
     }
 
-    // MARK: - Empty State
-
-    @ViewBuilder
-    private var emptyStateRootView: some View {
-        VStack(spacing: 16) {
-            LiquidIconView(.home, size: 44, color: ThemeEngine.shared.textSecondary(for: colorScheme))
-            Text("No hay pestañas abiertas")
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundStyle(ThemeEngine.shared.textSecondary(for: colorScheme))
-
-            Button("Abrir Pestaña") {
-                _ = coordinator.createNewTab()
-            }
-            .liquidButton()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    // MARK: - Tools Menu Sheet
+    // MARK: - Tools Menu Compact Sheet
 
     @ViewBuilder
     private var toolsMenuCompactSheet: some View {
-        let theme = ThemeEngine.shared
+        let theme = ThemeManager.shared
 
         NavigationView {
             ZStack {
@@ -243,7 +233,7 @@ public struct BrowserRootView: View {
                         }) {
                             HStack(spacing: 12) {
                                 LiquidIconView(.history, size: 18, color: theme.textPrimary(for: colorScheme))
-                                Text("Historial")
+                                Text("Historial de visitas y búsquedas")
                                     .font(.system(size: 15, design: .rounded))
                                     .foregroundStyle(theme.textPrimary(for: colorScheme))
                             }
@@ -355,17 +345,21 @@ public struct BrowserRootView: View {
     }
 }
 
-// MARK: - Helpers
+// MARK: - ReaderArticleWrapper
 
 public struct ReaderArticleWrapper: Identifiable {
     public let id = UUID()
     public let article: ReaderArticle
 }
 
+// MARK: - IdentifiableActivityItem
+
 public struct IdentifiableActivityItem: Identifiable {
     public let id = UUID()
     public let item: Any
 }
+
+// MARK: - WebViewWrapper
 
 public struct WebViewWrapper: UIViewRepresentable {
     public let webView: WKWebView

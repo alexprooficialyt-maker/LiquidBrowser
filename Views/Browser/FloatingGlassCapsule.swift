@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - FloatingGlassCapsule (Barra Inferior Fija Monocroma 19pt)
+
 public struct FloatingGlassCapsule: View {
     @Bindable var coordinator: WebEngineCoordinator
     var onOpenTabs: () -> Void
@@ -23,21 +25,24 @@ public struct FloatingGlassCapsule: View {
     }
 
     public var body: some View {
-        let theme = ThemeEngine.shared
+        let theme = ThemeManager.shared
 
         VStack(spacing: 0) {
+            // Línea luminosa de progreso de 2pt en el borde superior
             if coordinator.currentIsLoading {
                 progressBar(theme: theme)
             }
 
             HStack(spacing: 8) {
                 if !isEditingURL {
+                    // Atrás
                     LiquidIconButton(.back, size: 36, iconSize: 15) {
                         coordinator.goBack()
                     }
                     .disabled(!coordinator.currentCanGoBack)
                     .opacity(coordinator.currentCanGoBack ? 1.0 : 0.3)
 
+                    // Adelante
                     LiquidIconButton(.forward, size: 36, iconSize: 15) {
                         coordinator.goForward()
                     }
@@ -45,6 +50,7 @@ public struct FloatingGlassCapsule: View {
                     .opacity(coordinator.currentCanGoForward ? 1.0 : 0.3)
                 }
 
+                // Campo Central de URL / Búsqueda
                 centerURLBar(theme: theme)
 
                 if isEditingURL {
@@ -59,10 +65,12 @@ public struct FloatingGlassCapsule: View {
                     .foregroundStyle(theme.textPrimary(for: colorScheme))
                     .padding(.trailing, 4)
                 } else {
+                    // Herramientas / Compartir
                     LiquidIconButton(.share, size: 36, iconSize: 15) {
                         onOpenTools()
                     }
 
+                    // Gestor de Pestañas con Badge Numérico
                     LiquidIconButton(.tabs, size: 36, iconSize: 15) {
                         onOpenTabs()
                     }
@@ -99,8 +107,10 @@ public struct FloatingGlassCapsule: View {
         )
     }
 
+    // MARK: - Progress Bar
+
     @ViewBuilder
-    private func progressBar(theme: ThemeEngine) -> some View {
+    private func progressBar(theme: ThemeManager) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Rectangle()
@@ -116,30 +126,38 @@ public struct FloatingGlassCapsule: View {
         .padding(.horizontal, 19)
     }
 
+    // MARK: - Center URL Bar
+
     @ViewBuilder
-    private func centerURLBar(theme: ThemeEngine) -> some View {
+    private func centerURLBar(theme: ThemeManager) -> some View {
         HStack(spacing: 8) {
+            // Candado SSL
             LiquidIconView(
                 coordinator.currentIsSecure ? .lockSSL : .unlockSSL,
                 size: 13,
-                color: theme.textSecondary(for: colorScheme)
+                color: coordinator.currentIsSecure ?
+                    theme.textSecondary(for: colorScheme) :
+                    Color.red.opacity(0.85)
             )
 
             if isEditingURL {
-                TextField("Buscar o escribir URL…", text: $urlInputText)
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                TextField("Buscar o escribir URL...", text: $urlInputText)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(theme.textPrimary(for: colorScheme))
-                    .focused($isFieldFocused)
+                    .keyboardType(.webSearch)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
-                    .keyboardType(.webSearch)
+                    .focused($isFieldFocused)
                     .submitLabel(.go)
                     .onSubmit {
-                        commitNavigation()
+                        submitURL()
                     }
 
                 if !urlInputText.isEmpty {
-                    Button(action: { urlInputText = "" }) {
+                    Button(action: {
+                        HapticManager.shared.touchLight()
+                        urlInputText = ""
+                    }) {
                         LiquidIconView(.close, size: 12, color: theme.textSecondary(for: colorScheme))
                     }
                 }
@@ -152,51 +170,52 @@ public struct FloatingGlassCapsule: View {
                         isFieldFocused = true
                     }
                 }) {
-                    Text(displayTitleOrHost)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(theme.textPrimary(for: colorScheme))
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .buttonStyle(.plain)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(coordinator.currentDisplayTitle.isEmpty ? "Buscar o escribir URL" : coordinator.currentDisplayTitle)
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            .lineLimit(1)
 
-                if coordinator.currentIsLoading {
-                    Button(action: {
+                        if !coordinator.currentURLString.isEmpty {
+                            Text(coordinator.activeTab?.displayHost ?? "")
+                                .font(.system(size: 10, design: .rounded))
+                                .foregroundStyle(theme.textSecondary(for: colorScheme))
+                                .lineLimit(1)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+
+            if !isEditingURL {
+                // Botón de recarga rápida
+                Button(action: {
+                    HapticManager.shared.touchLight()
+                    if coordinator.currentIsLoading {
                         coordinator.stop()
-                    }) {
-                        LiquidIconView(.close, size: 12, color: theme.textSecondary(for: colorScheme))
-                            .padding(4)
-                    }
-                } else {
-                    Button(action: {
+                    } else {
                         coordinator.reload()
-                    }) {
-                        LiquidIconView(.reload, size: 12, color: theme.textSecondary(for: colorScheme))
-                            .padding(4)
                     }
+                }) {
+                    LiquidIconView(coordinator.currentIsLoading ? .stop : .reload, size: 13, color: theme.textSecondary(for: colorScheme))
                 }
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: 36)
+        .padding(.vertical, 7)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(colorScheme == .dark ? Color.white.opacity(0.06) : Color.black.opacity(0.04))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(theme.cardBackground(for: colorScheme))
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(theme.borderSpecular(for: colorScheme), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(theme.specularBorder(for: colorScheme), lineWidth: 0.5)
         }
     }
 
-    private var displayTitleOrHost: String {
-        if let tab = coordinator.activeTab {
-            return tab.displayHost
-        }
-        return "Buscar o URL"
-    }
+    // MARK: - Actions
 
-    private func commitNavigation() {
+    private func submitURL() {
         let input = urlInputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return }
         HapticManager.shared.touchMedium()
@@ -208,16 +227,18 @@ public struct FloatingGlassCapsule: View {
     }
 
     private func handleHorizontalSwipe(dx: CGFloat) {
-        let inSpace = coordinator.tabsInActiveSpace
-        guard inSpace.count > 1, let curID = coordinator.activeTabID,
-              let idx = inSpace.firstIndex(where: { $0.id == curID }) else { return }
+        let spaceTabs = coordinator.tabsInActiveSpace
+        guard spaceTabs.count > 1, let currentID = coordinator.activeTabID else { return }
+        guard let currentIndex = spaceTabs.firstIndex(where: { $0.id == currentID }) else { return }
 
-        if dx < -40 && idx < inSpace.count - 1 {
-            HapticManager.shared.selectionChanged()
-            coordinator.selectTab(id: inSpace[idx + 1].id)
-        } else if dx > 40 && idx > 0 {
-            HapticManager.shared.selectionChanged()
-            coordinator.selectTab(id: inSpace[idx - 1].id)
+        if dx < -50 && currentIndex < spaceTabs.count - 1 {
+            // Deslizar izquierda -> Pestaña siguiente
+            HapticManager.shared.touchLight()
+            coordinator.selectTab(id: spaceTabs[currentIndex + 1].id)
+        } else if dx > 50 && currentIndex > 0 {
+            // Deslizar derecha -> Pestaña anterior
+            HapticManager.shared.touchLight()
+            coordinator.selectTab(id: spaceTabs[currentIndex - 1].id)
         }
     }
 }

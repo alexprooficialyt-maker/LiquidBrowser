@@ -1,15 +1,18 @@
 import SwiftUI
 
+// MARK: - FindInPageBar (Búsqueda en Página en Cristal Líquido)
+
 public struct FindInPageBar: View {
     @Binding var searchText: String
     @Binding var currentMatch: Int
     @Binding var totalMatches: Int
+
     var onNext: () -> Void
     var onPrevious: () -> Void
     var onClose: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-    @FocusState private var isFieldFocused: Bool
+    @FocusState private var isSearchFocused: Bool
 
     public init(
         searchText: Binding<String>,
@@ -28,48 +31,71 @@ public struct FindInPageBar: View {
     }
 
     public var body: some View {
-        let theme = ThemeEngine.shared
+        let theme = ThemeManager.shared
 
-        HStack(spacing: 12) {
-            LiquidIconView(.search, size: 16, color: theme.textSecondary(for: colorScheme))
+        HStack(spacing: 8) {
+            LiquidIconView(.search, size: 14, color: theme.textSecondary(for: colorScheme))
 
-            TextField("Buscar en la página…", text: $searchText)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+            TextField("Buscar en página...", text: $searchText)
+                .font(.system(size: 14, design: .rounded))
                 .foregroundStyle(theme.textPrimary(for: colorScheme))
-                .focused($isFieldFocused)
+                .focused($isSearchFocused)
                 .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
                 .submitLabel(.search)
-                .onSubmit { onNext() }
+                .onSubmit {
+                    onNext()
+                }
 
             if totalMatches > 0 {
                 Text("\(currentMatch)/\(totalMatches)")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(theme.textSecondary(for: colorScheme))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(theme.cardBackground(for: colorScheme))
+                    .clipShape(Capsule())
             }
 
-            HStack(spacing: 4) {
-                Button(action: onPrevious) {
-                    LiquidIconView(.chevronUp, size: 14)
-                        .padding(6)
-                }
-                .disabled(totalMatches == 0)
-
-                Button(action: onNext) {
-                    LiquidIconView(.chevronDown, size: 14)
-                        .padding(6)
-                }
-                .disabled(totalMatches == 0)
-
-                Button(action: onClose) {
-                    LiquidIconView(.close, size: 14)
-                        .padding(6)
-                }
+            // Anterior
+            Button(action: {
+                HapticManager.shared.touchLight()
+                onPrevious()
+            }) {
+                LiquidIconView(.chevronUp, size: 12, color: theme.textPrimary(for: colorScheme))
+                    .padding(6)
+                    .background(theme.cardBackground(for: colorScheme))
+                    .clipShape(Circle())
             }
-            .foregroundStyle(theme.textPrimary(for: colorScheme))
+            .pressableFeedback()
+
+            // Siguiente
+            Button(action: {
+                HapticManager.shared.touchLight()
+                onNext()
+            }) {
+                LiquidIconView(.chevronDown, size: 12, color: theme.textPrimary(for: colorScheme))
+                    .padding(6)
+                    .background(theme.cardBackground(for: colorScheme))
+                    .clipShape(Circle())
+            }
+            .pressableFeedback()
+
+            // Cerrar
+            Button(action: {
+                HapticManager.shared.touchLight()
+                onClose()
+            }) {
+                LiquidIconView(.close, size: 12, color: theme.textSecondary(for: colorScheme))
+                    .padding(6)
+            }
+            .pressableFeedback()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .liquidGlass(config: .card)
-        .onAppear { isFieldFocused = true }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .liquidGlass(config: .chip)
+        .onAppear {
+            isSearchFocused = true
+        }
     }
 }
