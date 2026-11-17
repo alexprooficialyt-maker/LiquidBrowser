@@ -456,6 +456,29 @@ public final class StorageEngine: @unchecked Sendable {
         Self.saveJSON(savedSites, forKey: savedSitesKey)
     }
 
+    // MARK: - Generic JSON File Persistence & Downloads Helpers
+
+    public var downloadsDirectory: URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        let dir = paths[0].appendingPathComponent("Downloads", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }
+
+    public func downloadDestinationURL(suggestedFileName: String) -> URL {
+        downloadsDirectory.appendingPathComponent(suggestedFileName)
+    }
+
+    public func saveJSON<T: Encodable>(_ object: T, to fileName: String) {
+        Self.saveJSON(object, forKey: fileName)
+    }
+
+    public func loadJSON<T: Decodable>(from fileName: String) -> T? {
+        Self.loadJSON(T.self, forKey: fileName)
+    }
+
     private static func saveJSON<T: Encodable>(_ object: T, forKey key: String) {
         guard let data = try? JSONEncoder().encode(object) else { return }
         UserDefaults.standard.set(data, forKey: key)

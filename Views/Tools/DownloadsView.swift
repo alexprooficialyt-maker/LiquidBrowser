@@ -200,16 +200,3 @@ public struct IdentifiableURL: Identifiable {
     public let id = UUID()
     public let url: URL
 }
-
-// MARK: - ActivityShareSheet
-
-public struct ActivityShareSheet: UIViewControllerRepresentable {
-    public let activityItems: [Any]
-    public let applicationActivities: [UIActivity]? = nil
-
-    public func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
-    }
-
-    public func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}

@@ -4,6 +4,12 @@ import WebKit
 // MARK: - DarkModeCSSInjector
 
 public struct DarkModeCSSInjector {
+    public static let shared = DarkModeCSSInjector()
+
+    public func apply(to webView: WKWebView, enabled: Bool) {
+        Self.toggleDarkMode(on: webView, enabled: enabled)
+    }
+
     public static let darkModeCSS = """
     html {
         filter: invert(90%) hue-rotate(180deg) !important;

@@ -32,6 +32,10 @@ public struct SpaceModel: Identifiable, Codable, Sendable, Hashable {
         self.createdAt = createdAt
     }
 
+    public var iconTypeRaw: String {
+        icon.rawValue
+    }
+
     public static func defaultSpaces(for profileID: UUID) -> [SpaceModel] {
         [
             SpaceModel(name: "General", icon: .spaceFolder, isPrivate: false, isPinned: true, profileID: profileID, colorAccent: .monochrome),

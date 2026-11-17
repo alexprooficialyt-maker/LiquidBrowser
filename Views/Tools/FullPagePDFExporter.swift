@@ -4,6 +4,10 @@ import WebKit
 // MARK: - FullPagePDFExporter
 
 public struct FullPagePDFExporter {
+    public static func export(webView: WKWebView, completion: @escaping @Sendable (URL?) -> Void) {
+        exportPDF(from: webView, completion: completion)
+    }
+
     public static func exportPDF(from webView: WKWebView, completion: @escaping @Sendable (URL?) -> Void) {
         let pdfConfiguration = WKPDFConfiguration()
 

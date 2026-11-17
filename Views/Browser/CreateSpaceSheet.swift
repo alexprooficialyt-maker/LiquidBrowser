@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - CreateSpaceSheet (Creación y Edición de Espacios Monocromos)
 
 public struct CreateSpaceSheet: View {
-    @Bindable var coordinator: WebEngineCoordinator
+    public var coordinator: WebEngineCoordinator
     public var existingSpace: SpaceModel?
 
     @State private var spaceName: String = ""
@@ -20,11 +20,11 @@ public struct CreateSpaceSheet: View {
         .spacePrivate
     ]
 
-    public init(coordinator: WebEngineCoordinator, existingSpace: SpaceModel? = nil) {
+    public init(coordinator: WebEngineCoordinator = .shared, existingSpace: SpaceModel? = nil) {
         self.coordinator = coordinator
         self.existingSpace = existingSpace
         _spaceName = State(initialValue: existingSpace?.name ?? "")
-        if let raw = existingSpace?.iconTypeRaw, let icon = LiquidIconType(rawValue: raw) {
+        if let icon = existingSpace?.icon {
             _selectedIcon = State(initialValue: icon)
         }
     }
@@ -32,7 +32,7 @@ public struct CreateSpaceSheet: View {
     public var body: some View {
         let theme = ThemeManager.shared
 
-        NavigationView {
+        NavigationStack {
             ZStack {
                 theme.background(for: colorScheme)
                     .ignoresSafeArea()
@@ -58,26 +58,35 @@ public struct CreateSpaceSheet: View {
                     }
                     .padding(.top, 16)
 
-                    // Campo de Nombre
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Nombre")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    // Campo de Texto Monocromo
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("NOMBRE")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundStyle(theme.textSecondary(for: colorScheme))
+                            .padding(.leading, 4)
 
-                        TextField("Ej: Proyectos, Lectura, Noticias", text: $spaceName)
-                            .font(.system(size: 16, design: .rounded))
+                        TextField("Ej. Trabajo, Estudio, Personal", text: $spaceName)
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
                             .foregroundStyle(theme.textPrimary(for: colorScheme))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
-                            .liquidGlass(config: .card)
+                            .background {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(theme.cardBackground(for: colorScheme))
+                            }
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .strokeBorder(theme.borderSpecular(for: colorScheme), lineWidth: 0.5)
+                            }
                     }
                     .padding(.horizontal, 20)
 
-                    // Selector de Iconos Geométricos Monocromos
+                    // Selector de Iconos Artesanales
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Icono Monocromo")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        Text("ICONO VECTORIAL")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundStyle(theme.textSecondary(for: colorScheme))
+                            .padding(.leading, 4)
 
                         HStack(spacing: 12) {
                             ForEach(availableIcons, id: \.self) { icon in
@@ -89,25 +98,30 @@ public struct CreateSpaceSheet: View {
                                 }) {
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                            .fill(isSelected ? (colorScheme == .dark ? Color.white : Color.black) : theme.cardBackground(for: colorScheme))
+                                            .fill(
+                                                isSelected ?
+                                                (colorScheme == .dark ? Color.white : Color.black) :
+                                                theme.cardBackground(for: colorScheme)
+                                            )
                                             .frame(width: 46, height: 46)
 
                                         LiquidIconView(
                                             icon,
                                             size: 20,
                                             color: isSelected ?
-                                                (colorScheme == .dark ? Color.black : Color.white) :
-                                                theme.textPrimary(for: colorScheme)
+                                            (colorScheme == .dark ? Color.black : Color.white) :
+                                            theme.textPrimary(for: colorScheme)
                                         )
                                     }
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                                             .strokeBorder(
-                                                isSelected ? AnyShapeStyle(Color.clear) : AnyShapeStyle(theme.borderSpecular(for: colorScheme)),
+                                                theme.specularBorder(for: colorScheme),
                                                 lineWidth: 0.5
                                             )
                                     }
                                 }
+                                .buttonStyle(.plain)
                                 .pressableFeedback()
                             }
                         }
@@ -116,7 +130,7 @@ public struct CreateSpaceSheet: View {
 
                     Spacer()
 
-                    // Botón Guardar
+                    // Botón de Confirmación
                     Button(action: {
                         saveSpace()
                     }) {
@@ -156,21 +170,18 @@ public struct CreateSpaceSheet: View {
         let trimmed = spaceName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        if let existing = existingSpace, let idx = coordinator.spaces.firstIndex(where: { $0.id == existing.id }) {
-            coordinator.spaces[idx].name = trimmed
-            coordinator.spaces[idx].iconTypeRaw = selectedIcon.rawValue
-            coordinator.saveSpaces()
+        if let existing = existingSpace {
+            var updated = existing
+            updated.name = trimmed
+            updated.icon = selectedIcon
+            StorageEngine.shared.updateSpace(updated)
         } else {
-            let newSpace = SpaceModel(
+            _ = StorageEngine.shared.createSpace(
                 name: trimmed,
-                iconTypeRaw: selectedIcon.rawValue,
-                orderIndex: coordinator.spaces.count,
-                isPinned: false,
-                isPrivate: false
+                icon: selectedIcon,
+                isPrivate: false,
+                color: .monochrome
             )
-            coordinator.spaces.append(newSpace)
-            coordinator.activeSpaceID = newSpace.id
-            coordinator.saveSpaces()
         }
 
         HapticManager.shared.notifySuccess()

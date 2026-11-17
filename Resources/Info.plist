@@ -6,7 +6,7 @@
   <key>CFBundleName</key>
   <string>LiquidBrowser</string>
   <key>CFBundleDisplayName</key>
-  <string>Liquid Browser</string>
+  <string>SmartBot Browser</string>
   <key>CFBundleIdentifier</key>
   <string>com.liquidbrowser.app</string>
   <key>CFBundleVersion</key>
@@ -27,7 +27,7 @@
   <dict/>
 
   <key>NSFaceIDUsageDescription</key>
-  <string>Autenticación biométrica requerida para desbloquear pestañas privadas.</string>
+  <string>Autenticación biométrica requerida para desbloquear SmartBot Browser y perfiles protegidos.</string>
 
   <key>NSPhotoLibraryAddUsageDescription</key>
   <string>Permite exportar y guardar capturas completas de sitios web en tu fototeca.</string>
