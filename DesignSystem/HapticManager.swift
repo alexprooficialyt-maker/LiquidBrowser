@@ -1,16 +1,17 @@
 import UIKit
 
-// MARK: - HapticManager
+// MARK: - Apple Haptic Engine Manager
 
-public final class HapticManager: @unchecked Sendable {
+@MainActor
+public final class HapticManager: Sendable {
     public static let shared = HapticManager()
 
     private let selectionGenerator = UISelectionFeedbackGenerator()
     private let lightImpact = UIImpactFeedbackGenerator(style: .light)
     private let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
     private let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
-    private let rigidImpact = UIImpactFeedbackGenerator(style: .rigid)
     private let softImpact = UIImpactFeedbackGenerator(style: .soft)
+    private let rigidImpact = UIImpactFeedbackGenerator(style: .rigid)
     private let notificationGenerator = UINotificationFeedbackGenerator()
 
     private init() {
@@ -22,32 +23,38 @@ public final class HapticManager: @unchecked Sendable {
         lightImpact.prepare()
         mediumImpact.prepare()
         heavyImpact.prepare()
+        softImpact.prepare()
+        rigidImpact.prepare()
         notificationGenerator.prepare()
     }
 
+    // MARK: - Discrete Feedbacks
+
+    public func touchSelection() {
+        selectionGenerator.selectionChanged()
+    }
+
     public func touchLight() {
-        lightImpact.impactOccurred()
+        lightImpact.impactOccurred(intensity: 0.75)
     }
 
     public func touchMedium() {
-        mediumImpact.impactOccurred()
+        mediumImpact.impactOccurred(intensity: 0.85)
     }
 
     public func touchHeavy() {
-        heavyImpact.impactOccurred()
-    }
-
-    public func touchRigid() {
-        rigidImpact.impactOccurred()
+        heavyImpact.impactOccurred(intensity: 1.0)
     }
 
     public func touchSoft() {
-        softImpact.impactOccurred()
+        softImpact.impactOccurred(intensity: 0.65)
     }
 
-    public func selectionChanged() {
-        selectionGenerator.selectionChanged()
+    public func touchRigid() {
+        rigidImpact.impactOccurred(intensity: 0.90)
     }
+
+    // MARK: - Notifications
 
     public func notifySuccess() {
         notificationGenerator.notificationOccurred(.success)

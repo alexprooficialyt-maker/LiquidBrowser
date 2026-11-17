@@ -1,109 +1,114 @@
 import SwiftUI
 
-// MARK: - LiquidGlassConfig
+// MARK: - Liquid Glass Card Modifier
 
-public struct LiquidGlassConfig: Sendable {
-    public var cornerRadius: CGFloat
-    public var material: Material
-    public var strokeWidth: CGFloat
-    public var shadowRadius: CGFloat
-    public var shadowY: CGFloat
-    public var opacity: Double
-
-    public init(
-        cornerRadius: CGFloat = 19,
-        material: Material = .ultraThinMaterial,
-        strokeWidth: CGFloat = 0.5,
-        shadowRadius: CGFloat = 16,
-        shadowY: CGFloat = 6,
-        opacity: Double = 1.0
-    ) {
-        self.cornerRadius = cornerRadius
-        self.material = material
-        self.strokeWidth = strokeWidth
-        self.shadowRadius = shadowRadius
-        self.shadowY = shadowY
-        self.opacity = opacity
-    }
-
-    // Configuración Óptima: Radio equilibrado 19pt continuo, no píldora extrema
-    public static let capsuleBar = LiquidGlassConfig(
-        cornerRadius: 19,
-        material: .ultraThinMaterial,
-        strokeWidth: 0.5,
-        shadowRadius: 16,
-        shadowY: 6
-    )
-
-    public static let card = LiquidGlassConfig(
-        cornerRadius: 18,
-        material: .thinMaterial,
-        strokeWidth: 0.5,
-        shadowRadius: 12,
-        shadowY: 4
-    )
-
-    public static let chip = LiquidGlassConfig(
-        cornerRadius: 14,
-        material: .ultraThinMaterial,
-        strokeWidth: 0.5,
-        shadowRadius: 6,
-        shadowY: 2
-    )
-
-    public static let sheet = LiquidGlassConfig(
-        cornerRadius: 24,
-        material: .ultraThinMaterial,
-        strokeWidth: 0.5,
-        shadowRadius: 24,
-        shadowY: 10
-    )
-}
-
-// MARK: - LiquidGlassContainer
-
-public struct LiquidGlassContainer: ViewModifier {
+public struct LiquidGlassCardModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
-    public var config: LiquidGlassConfig
+    public var cornerRadius: CGFloat = 20
 
-    public init(config: LiquidGlassConfig = .capsuleBar) {
-        self.config = config
+    public init(cornerRadius: CGFloat = 20) {
+        self.cornerRadius = cornerRadius
     }
 
     public func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: config.cornerRadius, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         let theme = ThemeManager.shared
 
         content
             .background {
-                shape
-                    .fill(config.material)
-                    .overlay {
-                        shape
-                            .fill(theme.glassMaterialFill(for: colorScheme))
-                    }
+                ZStack {
+                    shape
+                        .fill(.ultraThinMaterial)
+
+                    shape
+                        .fill(theme.glassMaterialFill(for: colorScheme))
+
+                    shape
+                        .strokeBorder(theme.borderSpecular(for: colorScheme), lineWidth: 0.5)
+                }
             }
-            .overlay {
-                shape
-                    .strokeBorder(
-                        theme.borderSpecular(for: colorScheme),
-                        lineWidth: config.strokeWidth
-                    )
-            }
+            .clipShape(shape)
             .shadow(
                 color: theme.shadowColor(for: colorScheme),
-                radius: config.shadowRadius,
+                radius: colorScheme == .dark ? 16 : 10,
                 x: 0,
-                y: config.shadowY
+                y: colorScheme == .dark ? 6 : 4
             )
-            .opacity(config.opacity)
     }
 }
 
-// MARK: - View Extension
+// MARK: - Liquid Glass Capsule Modifier (Para Barra de Búsqueda Apple Safari)
+
+public struct LiquidGlassCapsuleModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    public var cornerRadius: CGFloat = 16
+
+    public init(cornerRadius: CGFloat = 16) {
+        self.cornerRadius = cornerRadius
+    }
+
+    public func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let theme = ThemeManager.shared
+
+        content
+            .background {
+                ZStack {
+                    shape
+                        .fill(.ultraThinMaterial)
+
+                    shape
+                        .fill(theme.glassMaterialFill(for: colorScheme))
+
+                    shape
+                        .strokeBorder(theme.borderSpecular(for: colorScheme), lineWidth: 0.5)
+                }
+            }
+            .clipShape(shape)
+            .shadow(
+                color: theme.shadowColor(for: colorScheme),
+                radius: 12,
+                x: 0,
+                y: 4
+            )
+    }
+}
+
+// MARK: - Liquid Glass Specular Hairline Modifier
+
+public struct LiquidSpecularHighlightModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    public var cornerRadius: CGFloat = 16
+    public var lineWidth: CGFloat = 0.5
+
+    public init(cornerRadius: CGFloat = 16, lineWidth: CGFloat = 0.5) {
+        self.cornerRadius = cornerRadius
+        self.lineWidth = lineWidth
+    }
+
+    public func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        let theme = ThemeManager.shared
+
+        content
+            .overlay {
+                shape.strokeBorder(theme.borderSpecular(for: colorScheme), lineWidth: lineWidth)
+            }
+    }
+}
+
+// MARK: - View Extensions for Liquid Glass
 
 extension View {
-    public func liquidGlass(config: LiquidGlassConfig = .capsuleBar) -> some View {
-        modifier(LiquidGlassContainer(config: config))
+    public func liquidGlassCard(cornerRadius: CGFloat = 20) -> some View {
+        modifier(LiquidGlassCardModifier(cornerRadius: cornerRadius))
+    }
+
+    public func liquidGlassCapsule(cornerRadius: CGFloat = 16) -> some View {
+        modifier(LiquidGlassCapsuleModifier(cornerRadius: cornerRadius))
+    }
+
+    public func liquidSpecularHighlight(cornerRadius: CGFloat = 16, lineWidth: CGFloat = 0.5) -> some View {
+        modifier(LiquidSpecularHighlightModifier(cornerRadius: cornerRadius, lineWidth: lineWidth))
     }
 }

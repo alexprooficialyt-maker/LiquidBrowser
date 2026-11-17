@@ -1,21 +1,23 @@
 import SwiftUI
 
-// MARK: - LiquidIconType Enum (45+ Handcrafted Vector Icons)
+// MARK: - LiquidIconType Enum (48 Handcrafted Vector Icons)
 
 public enum LiquidIconType: String, CaseIterable, Sendable {
-    // 1. Navegación
+    // 1. Navegación Safari
     case back
     case forward
     case reload
     case stop
     case home
 
-    // 2. Barra de acciones
-    case share
+    // 2. Barra de Búsqueda y Acciones
+    case search
     case tabs
     case newTab
+    case toolsMenu
     case close
-    case search
+    case share
+    case download
 
     // 3. Motores de Búsqueda
     case googleSearch
@@ -23,17 +25,19 @@ public enum LiquidIconType: String, CaseIterable, Sendable {
     case braveSearch
     case ecosiaSearch
 
-    // 4. Seguridad y SSL
+    // 4. Seguridad, SSL y Anti-Rastreo
     case lockSSL
     case unlockSSL
+    case warningSSL
     case shieldBlocker
+    case shieldActive
 
-    // 5. Autenticación y Perfil
+    // 5. Biometría y Autenticación
     case faceID
     case touchID
     case pinPad
-    case userProfile
-    case googleAccount
+    case keyPassword
+    case vault
 
     // 6. Espacios y Carpetas
     case spaceFolder
@@ -42,40 +46,34 @@ public enum LiquidIconType: String, CaseIterable, Sendable {
     case spaceCode
     case spacePrivate
     case spaceStar
-
-    // 7. Acciones de Pestaña y Menú Contextual
     case pin
     case unpin
     case moveSpace
     case editPencil
-    case renewTab
-
-    // 8. Herramientas del Navegador
-    case readerMode
-    case desktopMode
-    case mobileMode
-    case qrCode
-    case download
-    case history
-    case bookmark
-    case bookmarkFilled
-    case settings
     case trash
-    case burnSession
-    case sliderAdjust
 
-    // 9. Créditos y Autor
-    case creditsAuthor
-
-    // 10. Chevrons y Controles
-    case chevronLeft
-    case chevronRight
-    case chevronUp
-    case chevronDown
+    // 7. Herramientas y Ajustes
+    case readerMode
+    case qrCode
+    case pdfExport
+    case history
+    case bookmarks
+    case downloads
+    case settings
+    case palette
+    case globeLanguage
+    case resetFactory
     case checkmark
+    case chevronRight
+    case chevronDown
+
+    // 8. Perfiles
+    case userProfile
+    case briefcase
+    case graduationCap
 }
 
-// MARK: - LiquidIconShape Router
+// MARK: - Handcrafted Bézier Shapes Implementation
 
 public struct LiquidIconShape: Shape {
     public let type: LiquidIconType
@@ -88,78 +86,73 @@ public struct LiquidIconShape: Shape {
         var p = Path()
         let w = rect.width
         let h = rect.height
-        guard w > 0, h > 0 else { return p }
 
         switch type {
         // --- NAVEGACIÓN ---
         case .back:
             p.move(to: CGPoint(x: w * 0.65, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.35, y: h * 0.50))
             p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.80))
-            p.move(to: CGPoint(x: w * 0.32, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.50))
 
         case .forward:
             p.move(to: CGPoint(x: w * 0.35, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.50))
             p.addLine(to: CGPoint(x: w * 0.35, y: h * 0.80))
-            p.move(to: CGPoint(x: w * 0.68, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.50))
 
         case .reload:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            let r = min(w, h) * 0.35
-            p.addArc(center: center, radius: r, startAngle: .degrees(-40), endAngle: .degrees(250), clockwise: false)
-            let tip = CGPoint(x: center.x + r * cos(CGFloat(-40 * Double.pi / 180)),
-                              y: center.y + r * sin(CGFloat(-40 * Double.pi / 180)))
-            p.move(to: CGPoint(x: tip.x - w * 0.04, y: tip.y - h * 0.16))
-            p.addLine(to: tip)
-            p.addLine(to: CGPoint(x: tip.x - w * 0.16, y: tip.y - h * 0.04))
+            p.addArc(center: CGPoint(x: w * 0.5, y: h * 0.5), radius: w * 0.34, startAngle: .degrees(-45), endAngle: .degrees(250), clockwise: false)
+            p.move(to: CGPoint(x: w * 0.70, y: h * 0.16))
+            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.26))
+            p.addLine(to: CGPoint(x: w * 0.70, y: h * 0.36))
 
         case .stop:
-            p.addEllipse(in: CGRect(x: w * 0.15, y: h * 0.15, width: w * 0.70, height: h * 0.70))
-            p.move(to: CGPoint(x: w * 0.36, y: h * 0.36))
-            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.64))
-            p.move(to: CGPoint(x: w * 0.64, y: h * 0.36))
-            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.64))
+            p.move(to: CGPoint(x: w * 0.30, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.70, y: h * 0.70))
+            p.move(to: CGPoint(x: w * 0.70, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.70))
 
         case .home:
-            p.move(to: CGPoint(x: w * 0.18, y: h * 0.46))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.18))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.46))
-            p.move(to: CGPoint(x: w * 0.26, y: h * 0.43))
-            p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.43))
-            p.move(to: CGPoint(x: w * 0.42, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.58))
-            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.58))
-            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.82))
+            p.move(to: CGPoint(x: w * 0.20, y: h * 0.45))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.20))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.45))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.82))
+            p.closeSubpath()
+            p.move(to: CGPoint(x: w * 0.40, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.40, y: h * 0.58))
+            p.addLine(to: CGPoint(x: w * 0.60, y: h * 0.58))
+            p.addLine(to: CGPoint(x: w * 0.60, y: h * 0.82))
 
-        // --- BARRA DE ACCIONES ---
-        case .share:
-            p.addRoundedRect(in: CGRect(x: w * 0.22, y: h * 0.40, width: w * 0.56, height: h * 0.45),
-                             cornerSize: CGSize(width: 4, height: 4))
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.15))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.58))
-            p.move(to: CGPoint(x: w * 0.34, y: h * 0.30))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.15))
-            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.30))
+        // --- BARRA INFERIOR SAFARI ---
+        case .search:
+            p.addEllipse(in: CGRect(x: w * 0.20, y: h * 0.20, width: w * 0.46, height: h * 0.46))
+            p.move(to: CGPoint(x: w * 0.54, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.80))
 
         case .tabs:
-            p.addRoundedRect(in: CGRect(x: w * 0.18, y: h * 0.26, width: w * 0.50, height: h * 0.50),
-                             cornerSize: CGSize(width: 5, height: 5))
-            p.move(to: CGPoint(x: w * 0.36, y: h * 0.26))
-            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.18))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.18))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.64))
-            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.64))
+            p.addRoundedRect(in: CGRect(x: w * 0.18, y: h * 0.28, width: w * 0.50, height: h * 0.50), cornerSize: CGSize(width: 4, height: 4))
+            p.move(to: CGPoint(x: w * 0.34, y: h * 0.20))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.20))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.64))
 
         case .newTab:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.80))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.78))
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.50))
+
+        case .toolsMenu:
+            // Icono de controles y herramientas de página (3 barras con deslizadores estilo Apple)
+            p.move(to: CGPoint(x: w * 0.20, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.30))
             p.move(to: CGPoint(x: w * 0.20, y: h * 0.50))
             p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.50))
+            p.move(to: CGPoint(x: w * 0.20, y: h * 0.70))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.70))
+            // Círculos de deslizadores
+            p.addEllipse(in: CGRect(x: w * 0.32, y: h * 0.24, width: w * 0.12, height: h * 0.12))
+            p.addEllipse(in: CGRect(x: w * 0.58, y: h * 0.44, width: w * 0.12, height: h * 0.12))
+            p.addEllipse(in: CGRect(x: w * 0.40, y: h * 0.64, width: w * 0.12, height: h * 0.12))
 
         case .close:
             p.move(to: CGPoint(x: w * 0.26, y: h * 0.26))
@@ -167,399 +160,382 @@ public struct LiquidIconShape: Shape {
             p.move(to: CGPoint(x: w * 0.74, y: h * 0.26))
             p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.74))
 
-        case .search:
-            let cr = min(w, h) * 0.26
-            let cc = CGPoint(x: w * 0.42, y: h * 0.42)
-            p.addEllipse(in: CGRect(x: cc.x - cr, y: cc.y - cr, width: cr * 2, height: cr * 2))
-            p.move(to: CGPoint(x: cc.x + cr * 0.70, y: cc.y + cr * 0.70))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.82))
+        case .share:
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.16))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.60))
+            p.move(to: CGPoint(x: w * 0.32, y: h * 0.32))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.16))
+            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.32))
+            // Bandeja
+            p.move(to: CGPoint(x: w * 0.24, y: h * 0.46))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.80))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.80))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.46))
 
-        // --- MOTORES DE BÚSQUEDA VECTORIALES ---
+        case .download:
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.62))
+            p.move(to: CGPoint(x: w * 0.32, y: h * 0.46))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.62))
+            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.46))
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.78))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.78))
+
+        // --- MOTORES DE BÚSQUEDA ---
         case .googleSearch:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            let r = min(w, h) * 0.34
-            p.addArc(center: center, radius: r, startAngle: .degrees(-40), endAngle: .degrees(290), clockwise: false)
-            p.move(to: CGPoint(x: center.x, y: center.y))
-            p.addLine(to: CGPoint(x: center.x + r, y: center.y))
+            p.addArc(center: CGPoint(x: w * 0.5, y: h * 0.5), radius: w * 0.32, startAngle: .degrees(-45), endAngle: .degrees(225), clockwise: true)
+            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.50))
 
         case .duckDuckGoSearch:
-            p.move(to: CGPoint(x: w * 0.30, y: h * 0.70))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.30), control: CGPoint(x: w * 0.20, y: h * 0.35))
-            p.addQuadCurve(to: CGPoint(x: w * 0.75, y: h * 0.26), control: CGPoint(x: w * 0.60, y: h * 0.16))
-            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.34))
-            p.addLine(to: CGPoint(x: w * 0.72, y: h * 0.44))
-            p.addQuadCurve(to: CGPoint(x: w * 0.70, y: h * 0.70), control: CGPoint(x: w * 0.80, y: h * 0.60))
-            p.closeSubpath()
-            p.addEllipse(in: CGRect(x: w * 0.58, y: h * 0.28, width: w * 0.06, height: h * 0.06))
+            p.addEllipse(in: CGRect(x: w * 0.18, y: h * 0.18, width: w * 0.64, height: h * 0.64))
+            p.move(to: CGPoint(x: w * 0.36, y: h * 0.44))
+            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.44))
 
         case .braveSearch:
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.15))
-            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.28))
-            p.addLine(to: CGPoint(x: w * 0.72, y: h * 0.62))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.85), control: CGPoint(x: w * 0.62, y: h * 0.80))
-            p.addQuadCurve(to: CGPoint(x: w * 0.28, y: h * 0.62), control: CGPoint(x: w * 0.38, y: h * 0.80))
-            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.28))
+            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.66))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.85))
+            p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.66))
+            p.addLine(to: CGPoint(x: w * 0.18, y: h * 0.30))
             p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.40, y: h * 0.45))
-            p.addLine(to: CGPoint(x: w * 0.60, y: h * 0.45))
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.45))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.65))
 
         case .ecosiaSearch:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.85))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.45))
-            p.addQuadCurve(to: CGPoint(x: w * 0.25, y: h * 0.35), control: CGPoint(x: w * 0.30, y: h * 0.48))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.18), control: CGPoint(x: w * 0.30, y: h * 0.20))
-            p.addQuadCurve(to: CGPoint(x: w * 0.75, y: h * 0.35), control: CGPoint(x: w * 0.70, y: h * 0.20))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.45), control: CGPoint(x: w * 0.70, y: h * 0.48))
+            p.addEllipse(in: CGRect(x: w * 0.28, y: h * 0.22, width: w * 0.44, height: h * 0.44))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.80))
 
         // --- SEGURIDAD Y SSL ---
         case .lockSSL:
-            p.addRoundedRect(in: CGRect(x: w * 0.24, y: h * 0.44, width: w * 0.52, height: h * 0.42),
-                             cornerSize: CGSize(width: 5, height: 5))
-            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.44), radius: w * 0.18, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
-            p.addEllipse(in: CGRect(x: w * 0.46, y: h * 0.58, width: w * 0.08, height: h * 0.08))
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.66))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.74))
+            p.addRoundedRect(in: CGRect(x: w * 0.24, y: h * 0.44, width: w * 0.52, height: h * 0.42), cornerSize: CGSize(width: 4, height: 4))
+            p.move(to: CGPoint(x: w * 0.34, y: h * 0.44))
+            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.30))
+            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.30), radius: w * 0.16, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.44))
+            // Bocallave
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.58))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.72))
 
         case .unlockSSL:
-            p.addRoundedRect(in: CGRect(x: w * 0.24, y: h * 0.44, width: w * 0.52, height: h * 0.42),
-                             cornerSize: CGSize(width: 5, height: 5))
-            p.addArc(center: CGPoint(x: w * 0.58, y: h * 0.38), radius: w * 0.18, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.60))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.72))
+            p.addRoundedRect(in: CGRect(x: w * 0.24, y: h * 0.44, width: w * 0.52, height: h * 0.42), cornerSize: CGSize(width: 4, height: 4))
+            p.move(to: CGPoint(x: w * 0.34, y: h * 0.44))
+            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.26))
+            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.26), radius: w * 0.16, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.32))
+
+        case .warningSSL:
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.16))
+            p.addLine(to: CGPoint(x: w * 0.85, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.15, y: h * 0.82))
+            p.closeSubpath()
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.40))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.60))
+            p.addEllipse(in: CGRect(x: w * 0.47, y: h * 0.68, width: w * 0.06, height: h * 0.06))
 
         case .shieldBlocker:
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.14))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.24))
-            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.64))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.88), control: CGPoint(x: w * 0.68, y: h * 0.82))
-            p.addQuadCurve(to: CGPoint(x: w * 0.24, y: h * 0.64), control: CGPoint(x: w * 0.32, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.18, y: h * 0.24))
+            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.26))
+            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.54))
+            p.addCurve(
+                to: CGPoint(x: w * 0.50, y: h * 0.86),
+                control1: CGPoint(x: w * 0.82, y: h * 0.72),
+                control2: CGPoint(x: w * 0.65, y: h * 0.82)
+            )
+            p.addCurve(
+                to: CGPoint(x: w * 0.18, y: h * 0.54),
+                control1: CGPoint(x: w * 0.35, y: h * 0.82),
+                control2: CGPoint(x: w * 0.18, y: h * 0.72)
+            )
+            p.addLine(to: CGPoint(x: w * 0.18, y: h * 0.26))
             p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.34, y: h * 0.48))
-            p.addLine(to: CGPoint(x: w * 0.46, y: h * 0.60))
+
+        case .shieldActive:
+            p = LiquidIconShape(.shieldBlocker).path(in: rect)
+            p.move(to: CGPoint(x: w * 0.34, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.46, y: h * 0.62))
             p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.38))
 
-        // --- AUTENTICACIÓN Y PERFIL ---
+        // --- BIOMETRÍA Y AUTENTICACIÓN ---
         case .faceID:
-            // Esquinas biométricas de detección
-            let cL: CGFloat = w * 0.18
-            let s: CGFloat = w * 0.15
-            let e: CGFloat = w * 0.85
-            // Superior izq
-            p.move(to: CGPoint(x: s, y: s + cL)); p.addLine(to: CGPoint(x: s, y: s)); p.addLine(to: CGPoint(x: s + cL, y: s))
-            // Superior der
-            p.move(to: CGPoint(x: e - cL, y: s)); p.addLine(to: CGPoint(x: e, y: s)); p.addLine(to: CGPoint(x: e, y: s + cL))
-            // Inferior izq
-            p.move(to: CGPoint(x: s, y: e - cL)); p.addLine(to: CGPoint(x: s, y: e)); p.addLine(to: CGPoint(x: s + cL, y: e))
-            // Inferior der
-            p.move(to: CGPoint(x: e - cL, y: e)); p.addLine(to: CGPoint(x: e, y: e)); p.addLine(to: CGPoint(x: e, y: e - cL))
+            // Esquinas exteriores
+            p.move(to: CGPoint(x: w * 0.20, y: h * 0.34))
+            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.22))
+
+            p.move(to: CGPoint(x: w * 0.66, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.34))
+
+            p.move(to: CGPoint(x: w * 0.80, y: h * 0.66))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.78))
+            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.78))
+
+            p.move(to: CGPoint(x: w * 0.34, y: h * 0.78))
+            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.78))
+            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.66))
+
             // Ojos
-            p.move(to: CGPoint(x: w * 0.34, y: h * 0.40)); p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.44))
-            p.move(to: CGPoint(x: w * 0.66, y: h * 0.40)); p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.44))
+            p.move(to: CGPoint(x: w * 0.38, y: h * 0.40))
+            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.44))
+            p.move(to: CGPoint(x: w * 0.62, y: h * 0.40))
+            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.44))
+
             // Nariz
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.46)); p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.56))
-            p.addLine(to: CGPoint(x: w * 0.45, y: h * 0.56))
-            // Boca
-            p.move(to: CGPoint(x: w * 0.36, y: h * 0.66))
-            p.addQuadCurve(to: CGPoint(x: w * 0.64, y: h * 0.66), control: CGPoint(x: w * 0.50, y: h * 0.74))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.42))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.56))
+            p.addLine(to: CGPoint(x: w * 0.54, y: h * 0.56))
+
+            // Sonrisa
+            p.move(to: CGPoint(x: w * 0.38, y: h * 0.64))
+            p.addQuadCurve(to: CGPoint(x: w * 0.62, y: h * 0.64), control: CGPoint(x: w * 0.50, y: h * 0.72))
 
         case .touchID:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            p.addArc(center: center, radius: w * 0.12, startAngle: .degrees(130), endAngle: .degrees(50), clockwise: false)
-            p.addArc(center: center, radius: w * 0.22, startAngle: .degrees(140), endAngle: .degrees(40), clockwise: false)
-            p.addArc(center: center, radius: w * 0.32, startAngle: .degrees(150), endAngle: .degrees(30), clockwise: false)
-            p.addArc(center: center, radius: w * 0.40, startAngle: .degrees(160), endAngle: .degrees(20), clockwise: false)
+            // Huella digital estilizada
+            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.54), radius: w * 0.30, startAngle: .degrees(190), endAngle: .degrees(-10), clockwise: false)
+            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.54), radius: w * 0.20, startAngle: .degrees(190), endAngle: .degrees(-10), clockwise: false)
+            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.54), radius: w * 0.10, startAngle: .degrees(190), endAngle: .degrees(-10), clockwise: false)
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.80))
 
         case .pinPad:
-            let r: CGFloat = w * 0.05
             for row in 0..<3 {
                 for col in 0..<3 {
-                    let cx = w * 0.26 + CGFloat(col) * (w * 0.24)
-                    let cy = h * 0.26 + CGFloat(row) * (h * 0.24)
-                    p.addEllipse(in: CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2))
+                    let cx = w * (0.30 + CGFloat(col) * 0.20)
+                    let cy = h * (0.30 + CGFloat(row) * 0.20)
+                    p.addEllipse(in: CGRect(x: cx - 2, y: cy - 2, width: 4, height: 4))
                 }
             }
 
-        case .userProfile, .googleAccount:
-            p.addEllipse(in: CGRect(x: w * 0.12, y: h * 0.12, width: w * 0.76, height: h * 0.76))
-            p.addEllipse(in: CGRect(x: w * 0.36, y: h * 0.26, width: w * 0.28, height: h * 0.28))
-            p.move(to: CGPoint(x: w * 0.24, y: h * 0.78))
-            p.addQuadCurve(to: CGPoint(x: w * 0.76, y: h * 0.78), control: CGPoint(x: w * 0.50, y: h * 0.58))
+        case .keyPassword:
+            p.addEllipse(in: CGRect(x: w * 0.20, y: h * 0.24, width: w * 0.34, height: h * 0.34))
+            p.move(to: CGPoint(x: w * 0.48, y: h * 0.48))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.78))
+            p.move(to: CGPoint(x: w * 0.66, y: h * 0.66))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.56))
 
-        // --- ESPACIOS Y CARPETAS ---
+        case .vault:
+            p.addRoundedRect(in: CGRect(x: w * 0.18, y: h * 0.20, width: w * 0.64, height: h * 0.60), cornerSize: CGSize(width: 6, height: 6))
+            p.addEllipse(in: CGRect(x: w * 0.40, y: h * 0.40, width: w * 0.20, height: h * 0.20))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.35))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.65))
+            p.move(to: CGPoint(x: w * 0.35, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.50))
+
+        // --- ESPACIOS Y PESTAÑAS ---
         case .spaceFolder:
-            p.move(to: CGPoint(x: w * 0.16, y: h * 0.32))
-            p.addLine(to: CGPoint(x: w * 0.40, y: h * 0.32))
-            p.addLine(to: CGPoint(x: w * 0.48, y: h * 0.42))
-            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.42))
+            p.move(to: CGPoint(x: w * 0.16, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.48, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.38))
             p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.78))
             p.addLine(to: CGPoint(x: w * 0.16, y: h * 0.78))
             p.closeSubpath()
 
         case .spaceWork:
-            p.addRoundedRect(in: CGRect(x: w * 0.16, y: h * 0.36, width: w * 0.68, height: h * 0.50),
-                             cornerSize: CGSize(width: 5, height: 5))
-            p.move(to: CGPoint(x: w * 0.34, y: h * 0.36))
-            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.22))
-            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.22))
-            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.36))
-            p.move(to: CGPoint(x: w * 0.16, y: h * 0.56))
-            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.56))
+            p = LiquidIconShape(.spaceFolder).path(in: rect)
+            p.move(to: CGPoint(x: w * 0.42, y: h * 0.52))
+            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.52))
 
         case .spaceStudy:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.22))
-            p.addLine(to: CGPoint(x: w * 0.86, y: h * 0.40))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.58))
-            p.addLine(to: CGPoint(x: w * 0.14, y: h * 0.40))
-            p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.28, y: h * 0.48))
-            p.addLine(to: CGPoint(x: w * 0.28, y: h * 0.70))
-            p.addQuadCurve(to: CGPoint(x: w * 0.72, y: h * 0.70), control: CGPoint(x: w * 0.50, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.72, y: h * 0.48))
+            p = LiquidIconShape(.spaceFolder).path(in: rect)
+            p.addEllipse(in: CGRect(x: w * 0.44, y: h * 0.50, width: w * 0.12, height: h * 0.12))
 
         case .spaceCode:
-            p.move(to: CGPoint(x: w * 0.36, y: h * 0.28))
-            p.addLine(to: CGPoint(x: w * 0.18, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.72))
-            p.move(to: CGPoint(x: w * 0.64, y: h * 0.28))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.72))
-            p.move(to: CGPoint(x: w * 0.56, y: h * 0.24))
-            p.addLine(to: CGPoint(x: w * 0.44, y: h * 0.76))
+            p.move(to: CGPoint(x: w * 0.38, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.62))
+            p.move(to: CGPoint(x: w * 0.62, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.62))
+            p.move(to: CGPoint(x: w * 0.56, y: h * 0.32))
+            p.addLine(to: CGPoint(x: w * 0.44, y: h * 0.68))
 
         case .spacePrivate:
-            p.move(to: CGPoint(x: w * 0.15, y: h * 0.50))
-            p.addQuadCurve(to: CGPoint(x: w * 0.85, y: h * 0.50), control: CGPoint(x: w * 0.50, y: h * 0.20))
-            p.addQuadCurve(to: CGPoint(x: w * 0.15, y: h * 0.50), control: CGPoint(x: w * 0.50, y: h * 0.80))
-            p.addEllipse(in: CGRect(x: w * 0.40, y: h * 0.40, width: w * 0.20, height: h * 0.20))
+            p = LiquidIconShape(.spaceFolder).path(in: rect)
+            p.addEllipse(in: CGRect(x: w * 0.46, y: h * 0.54, width: w * 0.08, height: h * 0.08))
 
         case .spaceStar:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            let rOut = min(w, h) * 0.38
-            let rIn = rOut * 0.42
-            for i in 0..<10 {
-                let angle = Double(i) * Double.pi / 5.0 - Double.pi / 2.0
-                let r = (i % 2 == 0) ? rOut : rIn
-                let pt = CGPoint(x: center.x + CGFloat(cos(angle)) * r,
-                                 y: center.y + CGFloat(sin(angle)) * r)
-                if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
-            }
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.59, y: h * 0.36))
+            p.addLine(to: CGPoint(x: w * 0.79, y: h * 0.39))
+            p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.53))
+            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.73))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.64))
+            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.73))
+            p.addLine(to: CGPoint(x: w * 0.35, y: h * 0.53))
+            p.addLine(to: CGPoint(x: w * 0.21, y: h * 0.39))
+            p.addLine(to: CGPoint(x: w * 0.41, y: h * 0.36))
             p.closeSubpath()
 
-        // --- ACCIONES DE PESTAÑA Y MENÚ CONTEXTUAL ---
         case .pin:
-            p.move(to: CGPoint(x: w * 0.35, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.72, y: h * 0.56))
-            p.addLine(to: CGPoint(x: w * 0.28, y: h * 0.56))
-            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.50))
+            p.move(to: CGPoint(x: w * 0.35, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.48))
+            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.48))
             p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.56))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.85))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.82))
 
         case .unpin:
-            p.move(to: CGPoint(x: w * 0.35, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.65, y: h * 0.20))
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.56))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.85))
-            p.move(to: CGPoint(x: w * 0.20, y: h * 0.20))
-            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.80))
+            p = LiquidIconShape(.pin).path(in: rect)
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.78))
 
         case .moveSpace:
-            p.move(to: CGPoint(x: w * 0.14, y: h * 0.34))
-            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.34))
-            p.addLine(to: CGPoint(x: w * 0.44, y: h * 0.44))
-            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.44))
-            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.76))
-            p.addLine(to: CGPoint(x: w * 0.14, y: h * 0.76))
-            p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.60, y: h * 0.60))
-            p.addLine(to: CGPoint(x: w * 0.86, y: h * 0.60))
-            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.52))
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.50))
+            p.move(to: CGPoint(x: w * 0.62, y: h * 0.34))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.66))
 
         case .editPencil:
-            p.move(to: CGPoint(x: w * 0.22, y: h * 0.78))
-            p.addLine(to: CGPoint(x: w * 0.22, y: h * 0.66))
-            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.24))
-            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.36))
-            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.78))
-            p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.16, y: h * 0.84))
-            p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.84))
-
-        case .renewTab:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            let r = min(w, h) * 0.34
-            p.addArc(center: center, radius: r, startAngle: .degrees(45), endAngle: .degrees(315), clockwise: false)
-            let tip = CGPoint(x: center.x + r * cos(CGFloat(45 * Double.pi / 180)),
-                              y: center.y + r * sin(CGFloat(45 * Double.pi / 180)))
-            p.move(to: CGPoint(x: tip.x + w * 0.05, y: tip.y - h * 0.15))
-            p.addLine(to: tip)
-            p.addLine(to: CGPoint(x: tip.x - w * 0.15, y: tip.y - h * 0.05))
-
-        // --- HERRAMIENTAS ---
-        case .readerMode:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.26))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.78))
-            p.addQuadCurve(to: CGPoint(x: w * 0.18, y: h * 0.74), control: CGPoint(x: w * 0.34, y: h * 0.78))
-            p.addLine(to: CGPoint(x: w * 0.18, y: h * 0.22))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.26), control: CGPoint(x: w * 0.34, y: h * 0.22))
-            p.addQuadCurve(to: CGPoint(x: w * 0.82, y: h * 0.22), control: CGPoint(x: w * 0.66, y: h * 0.22))
-            p.addLine(to: CGPoint(x: w * 0.82, y: h * 0.74))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.78), control: CGPoint(x: w * 0.66, y: h * 0.78))
-
-        case .desktopMode:
-            p.addRoundedRect(in: CGRect(x: w * 0.16, y: h * 0.22, width: w * 0.68, height: h * 0.46),
-                             cornerSize: CGSize(width: 4, height: 4))
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.68))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.82))
-            p.move(to: CGPoint(x: w * 0.32, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.82))
-
-        case .mobileMode:
-            p.addRoundedRect(in: CGRect(x: w * 0.28, y: h * 0.16, width: w * 0.44, height: h * 0.68),
-                             cornerSize: CGSize(width: 7, height: 7))
-            p.move(to: CGPoint(x: w * 0.46, y: h * 0.76))
-            p.addLine(to: CGPoint(x: w * 0.54, y: h * 0.76))
-
-        case .qrCode:
-            // Esquinas cuadradas de alineación QR
-            let s: CGFloat = w * 0.20
-            p.addRect(CGRect(x: w * 0.16, y: h * 0.16, width: s, height: s))
-            p.addRect(CGRect(x: w * 0.64, y: h * 0.16, width: s, height: s))
-            p.addRect(CGRect(x: w * 0.16, y: h * 0.64, width: s, height: s))
-            p.addRect(CGRect(x: w * 0.44, y: h * 0.44, width: w * 0.12, height: h * 0.12))
-            p.addRect(CGRect(x: w * 0.64, y: h * 0.64, width: w * 0.20, height: h * 0.20))
-
-        case .download:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.18))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.60))
-            p.move(to: CGPoint(x: w * 0.32, y: h * 0.44))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.60))
-            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.44))
-            p.move(to: CGPoint(x: w * 0.20, y: h * 0.74))
-            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.74))
-
-        case .history:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            p.addEllipse(in: CGRect(x: w * 0.16, y: h * 0.16, width: w * 0.68, height: h * 0.68))
-            p.move(to: center)
-            p.addLine(to: CGPoint(x: center.x, y: h * 0.30))
-            p.move(to: center)
-            p.addLine(to: CGPoint(x: w * 0.66, y: center.y))
-
-        case .bookmark:
-            p.move(to: CGPoint(x: w * 0.26, y: h * 0.16))
-            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.16))
-            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.84))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.66))
-            p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.84))
-            p.closeSubpath()
-
-        case .bookmarkFilled:
-            p.move(to: CGPoint(x: w * 0.26, y: h * 0.16))
-            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.16))
-            p.addLine(to: CGPoint(x: w * 0.74, y: h * 0.84))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.66))
-            p.addLine(to: CGPoint(x: w * 0.26, y: h * 0.84))
-            p.closeSubpath()
-
-        case .settings:
-            let center = CGPoint(x: w * 0.50, y: h * 0.50)
-            p.addEllipse(in: CGRect(x: center.x - w * 0.14, y: center.y - h * 0.14, width: w * 0.28, height: h * 0.28))
-            let rOut = min(w, h) * 0.36
-            let rIn = rOut * 0.82
-            for i in 0..<8 {
-                let a = Double(i) * Double.pi / 4.0
-                let ptOut1 = CGPoint(x: center.x + CGFloat(cos(a - 0.12)) * rOut, y: center.y + CGFloat(sin(a - 0.12)) * rOut)
-                let ptOut2 = CGPoint(x: center.x + CGFloat(cos(a + 0.12)) * rOut, y: center.y + CGFloat(sin(a + 0.12)) * rOut)
-                let ptIn = CGPoint(x: center.x + CGFloat(cos(a + 0.39)) * rIn, y: center.y + CGFloat(sin(a + 0.39)) * rIn)
-                if i == 0 { p.move(to: ptOut1) } else { p.addLine(to: ptOut1) }
-                p.addLine(to: ptOut2)
-                p.addLine(to: ptIn)
-            }
+            p.move(to: CGPoint(x: w * 0.68, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.32))
+            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.72))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.76))
+            p.addLine(to: CGPoint(x: w * 0.28, y: h * 0.62))
             p.closeSubpath()
 
         case .trash:
-            p.move(to: CGPoint(x: w * 0.22, y: h * 0.28))
-            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.28))
-            p.move(to: CGPoint(x: w * 0.38, y: h * 0.28))
-            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.18))
-            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.18))
-            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.28))
-            p.addRoundedRect(in: CGRect(x: w * 0.26, y: h * 0.28, width: w * 0.48, height: h * 0.54),
-                             cornerSize: CGSize(width: 3, height: 3))
-            p.move(to: CGPoint(x: w * 0.42, y: h * 0.40))
-            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.70))
-            p.move(to: CGPoint(x: w * 0.58, y: h * 0.40))
-            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.70))
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.78, y: h * 0.30))
+            p.move(to: CGPoint(x: w * 0.38, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.20))
+            p.addLine(to: CGPoint(x: w * 0.58, y: h * 0.20))
+            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.30))
+            p.move(to: CGPoint(x: w * 0.28, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.68, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.72, y: h * 0.30))
 
-        case .burnSession:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.15))
-            p.addQuadCurve(to: CGPoint(x: w * 0.76, y: h * 0.58), control: CGPoint(x: w * 0.78, y: h * 0.34))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.86), control: CGPoint(x: w * 0.74, y: h * 0.82))
-            p.addQuadCurve(to: CGPoint(x: w * 0.24, y: h * 0.58), control: CGPoint(x: w * 0.26, y: h * 0.82))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.15), control: CGPoint(x: w * 0.22, y: h * 0.34))
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.48))
-            p.addQuadCurve(to: CGPoint(x: w * 0.62, y: h * 0.66), control: CGPoint(x: w * 0.64, y: h * 0.54))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.76), control: CGPoint(x: w * 0.60, y: h * 0.76))
-            p.addQuadCurve(to: CGPoint(x: w * 0.38, y: h * 0.66), control: CGPoint(x: w * 0.40, y: h * 0.76))
-            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.48), control: CGPoint(x: w * 0.36, y: h * 0.54))
+        // --- HERRAMIENTAS Y AJUSTES ---
+        case .readerMode:
+            p.move(to: CGPoint(x: w * 0.20, y: h * 0.26))
+            p.addLine(to: CGPoint(x: w * 0.48, y: h * 0.26))
+            p.addLine(to: CGPoint(x: w * 0.48, y: h * 0.76))
+            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.76))
+            p.closeSubpath()
+            p.move(to: CGPoint(x: w * 0.52, y: h * 0.26))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.26))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.76))
+            p.addLine(to: CGPoint(x: w * 0.52, y: h * 0.76))
+            p.closeSubpath()
 
-        case .sliderAdjust:
-            p.move(to: CGPoint(x: w * 0.20, y: h * 0.35)); p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.35))
-            p.move(to: CGPoint(x: w * 0.20, y: h * 0.65)); p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.65))
-            p.addEllipse(in: CGRect(x: w * 0.36, y: h * 0.25, width: w * 0.18, height: h * 0.20))
-            p.addEllipse(in: CGRect(x: w * 0.54, y: h * 0.55, width: w * 0.18, height: h * 0.20))
+        case .qrCode:
+            p.addRect(CGRect(x: w * 0.20, y: h * 0.20, width: w * 0.24, height: h * 0.24))
+            p.addRect(CGRect(x: w * 0.56, y: h * 0.20, width: w * 0.24, height: h * 0.24))
+            p.addRect(CGRect(x: w * 0.20, y: h * 0.56, width: w * 0.24, height: h * 0.24))
+            p.move(to: CGPoint(x: w * 0.56, y: h * 0.56))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.56))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.80))
 
-        case .creditsAuthor:
-            // Emblema de autor / diseñador Apple
-            p.addEllipse(in: CGRect(x: w * 0.15, y: h * 0.15, width: w * 0.70, height: h * 0.70))
-            p.move(to: CGPoint(x: w * 0.32, y: h * 0.68))
-            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.32))
-            p.addLine(to: CGPoint(x: w * 0.52, y: h * 0.32))
-            p.addQuadCurve(to: CGPoint(x: w * 0.52, y: h * 0.50), control: CGPoint(x: w * 0.68, y: h * 0.41))
-            p.addLine(to: CGPoint(x: w * 0.32, y: h * 0.50))
-            p.move(to: CGPoint(x: w * 0.48, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.68))
+        case .pdfExport:
+            p.move(to: CGPoint(x: w * 0.24, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.56, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.82))
+            p.closeSubpath()
 
-        // --- CHEVRONS Y CONTROLES ---
-        case .chevronLeft:
-            p.move(to: CGPoint(x: w * 0.62, y: h * 0.25))
-            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.75))
+        case .history:
+            p.addEllipse(in: CGRect(x: w * 0.18, y: h * 0.18, width: w * 0.64, height: h * 0.64))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.30))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.50))
 
-        case .chevronRight:
-            p.move(to: CGPoint(x: w * 0.38, y: h * 0.25))
-            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.50))
-            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.75))
+        case .bookmarks:
+            p.move(to: CGPoint(x: w * 0.24, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.18))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.82))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.64))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.82))
+            p.closeSubpath()
 
-        case .chevronUp:
-            p.move(to: CGPoint(x: w * 0.25, y: h * 0.62))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.38))
-            p.addLine(to: CGPoint(x: w * 0.75, y: h * 0.62))
+        case .downloads:
+            p = LiquidIconShape(.download).path(in: rect)
 
-        case .chevronDown:
-            p.move(to: CGPoint(x: w * 0.25, y: h * 0.38))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.62))
-            p.addLine(to: CGPoint(x: w * 0.75, y: h * 0.38))
+        case .settings:
+            p.addEllipse(in: CGRect(x: w * 0.36, y: h * 0.36, width: w * 0.28, height: h * 0.28))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.16))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.24))
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.76))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.84))
+            p.move(to: CGPoint(x: w * 0.16, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.50))
+            p.move(to: CGPoint(x: w * 0.76, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.50))
+
+        case .palette:
+            p.addEllipse(in: CGRect(x: w * 0.16, y: h * 0.18, width: w * 0.68, height: h * 0.64))
+            p.addEllipse(in: CGRect(x: w * 0.32, y: h * 0.34, width: 4, height: 4))
+            p.addEllipse(in: CGRect(x: w * 0.50, y: h * 0.28, width: 4, height: 4))
+            p.addEllipse(in: CGRect(x: w * 0.64, y: h * 0.40, width: 4, height: 4))
+
+        case .globeLanguage:
+            p.addEllipse(in: CGRect(x: w * 0.16, y: h * 0.16, width: w * 0.68, height: h * 0.68))
+            p.move(to: CGPoint(x: w * 0.16, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.50))
+            p.addEllipse(in: CGRect(x: w * 0.30, y: h * 0.16, width: w * 0.40, height: h * 0.68))
+
+        case .resetFactory:
+            p.move(to: CGPoint(x: w * 0.20, y: h * 0.50))
+            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.50), radius: w * 0.32, startAngle: .degrees(180), endAngle: .degrees(90), clockwise: false)
+            p.move(to: CGPoint(x: w * 0.12, y: h * 0.40))
+            p.addLine(to: CGPoint(x: w * 0.20, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.28, y: h * 0.40))
 
         case .checkmark:
-            p.move(to: CGPoint(x: w * 0.24, y: h * 0.52))
-            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.70))
-            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.32))
+            p.move(to: CGPoint(x: w * 0.22, y: h * 0.52))
+            p.addLine(to: CGPoint(x: w * 0.42, y: h * 0.72))
+            p.addLine(to: CGPoint(x: w * 0.80, y: h * 0.30))
+
+        case .chevronRight:
+            p.move(to: CGPoint(x: w * 0.38, y: h * 0.24))
+            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.76))
+
+        case .chevronDown:
+            p.move(to: CGPoint(x: w * 0.24, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.62))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.38))
+
+        // --- PERFILES ---
+        case .userProfile:
+            p.addEllipse(in: CGRect(x: w * 0.32, y: h * 0.18, width: w * 0.36, height: h * 0.36))
+            p.move(to: CGPoint(x: w * 0.18, y: h * 0.82))
+            p.addCurve(
+                to: CGPoint(x: w * 0.82, y: h * 0.82),
+                control1: CGPoint(x: w * 0.20, y: h * 0.58),
+                control2: CGPoint(x: w * 0.80, y: h * 0.58)
+            )
+
+        case .briefcase:
+            p.addRoundedRect(in: CGRect(x: w * 0.18, y: h * 0.34, width: w * 0.64, height: h * 0.48), cornerSize: CGSize(width: 4, height: 4))
+            p.move(to: CGPoint(x: w * 0.36, y: h * 0.34))
+            p.addLine(to: CGPoint(x: w * 0.36, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.64, y: h * 0.34))
+
+        case .graduationCap:
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.22))
+            p.addLine(to: CGPoint(x: w * 0.84, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.54))
+            p.addLine(to: CGPoint(x: w * 0.16, y: h * 0.38))
+            p.closeSubpath()
+            p.move(to: CGPoint(x: w * 0.30, y: h * 0.46))
+            p.addLine(to: CGPoint(x: w * 0.30, y: h * 0.68))
+            p.addQuadCurve(to: CGPoint(x: w * 0.70, y: h * 0.68), control: CGPoint(x: w * 0.50, y: h * 0.78))
+            p.addLine(to: CGPoint(x: w * 0.70, y: h * 0.46))
         }
 
         return p
     }
 }
 
-// MARK: - LiquidIconView
+// MARK: - LiquidIconView (Universal Vector Icon View with Stroke & LineWidth Fallback)
 
 public struct LiquidIconView: View {
     public let type: LiquidIconType
@@ -595,5 +571,146 @@ public struct LiquidIconView: View {
                 )
             )
             .frame(width: size, height: size)
+    }
+}
+
+// MARK: - Animated Micro-Interactions
+
+// 1. Escudo Anti-Espías con Pulso Suave cuando bloquea
+public struct AnimatedShieldIcon: View {
+    public var isBlocking: Bool
+    public var blockedCount: Int
+    public var size: CGFloat = 22
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var pulseScale: CGFloat = 1.0
+
+    public init(isBlocking: Bool, blockedCount: Int = 0, size: CGFloat = 22) {
+        self.isBlocking = isBlocking
+        self.blockedCount = blockedCount
+        self.size = size
+    }
+
+    public var body: some View {
+        ZStack {
+            LiquidIconView(.shieldActive, size: size, color: ThemeManager.shared.textPrimary(for: colorScheme))
+                .scaleEffect(pulseScale)
+
+            if isBlocking {
+                Circle()
+                    .stroke(ThemeManager.shared.accent(for: colorScheme), lineWidth: 1.0)
+                    .frame(width: size * 1.3, height: size * 1.3)
+                    .scaleEffect(pulseScale)
+                    .opacity(2.0 - pulseScale)
+            }
+        }
+        .onChange(of: blockedCount) { _, _ in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                pulseScale = 1.25
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    pulseScale = 1.0
+                }
+            }
+        }
+    }
+}
+
+// 2. Candado SSL Animado con Rotación Mecánica
+public struct AnimatedPadlockIcon: View {
+    public var isSecure: Bool
+    public var size: CGFloat = 18
+    @Environment(\.colorScheme) private var colorScheme
+
+    public init(isSecure: Bool, size: CGFloat = 18) {
+        self.isSecure = isSecure
+        self.size = size
+    }
+
+    public var body: some View {
+        ZStack {
+            if isSecure {
+                LiquidIconView(.lockSSL, size: size, color: ThemeManager.shared.textPrimary(for: colorScheme))
+                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+            } else {
+                LiquidIconView(.warningSSL, size: size, color: Color(red: 0.95, green: 0.40, blue: 0.10))
+                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+            }
+        }
+        .animation(LiquidAnimation.interactiveSpring, value: isSecure)
+    }
+}
+
+// 3. Icono de Recarga con Rotación Fluida
+public struct AnimatedReloadIcon: View {
+    public var isLoading: Bool
+    public var size: CGFloat = 20
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var angle: Double = 0
+
+    public init(isLoading: Bool, size: CGFloat = 20) {
+        self.isLoading = isLoading
+        self.size = size
+    }
+
+    public var body: some View {
+        LiquidIconView(isLoading ? .stop : .reload, size: size, color: ThemeManager.shared.textPrimary(for: colorScheme))
+            .rotationEffect(.degrees(angle))
+            .onChange(of: isLoading) { _, loading in
+                if loading {
+                    withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) {
+                        angle = 360
+                    }
+                } else {
+                    withAnimation(LiquidAnimation.interactiveSpring) {
+                        angle = 0
+                    }
+                }
+            }
+    }
+}
+
+// 4. Icono Biométrico con Pulso de Escaneo
+public struct AnimatedBiometricIcon: View {
+    public var type: LABiometryType
+    public var isScanning: Bool
+    public var size: CGFloat = 48
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var scanOffset: CGFloat = -18
+
+    public init(type: LABiometryType, isScanning: Bool = false, size: CGFloat = 48) {
+        self.type = type
+        self.isScanning = isScanning
+        self.size = size
+    }
+
+    public var body: some View {
+        ZStack {
+            LiquidIconView(
+                type == .faceID ? .faceID : .touchID,
+                size: size,
+                color: ThemeManager.shared.textPrimary(for: colorScheme),
+                strokeWidth: 2.0
+            )
+
+            if isScanning {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.clear, ThemeManager.shared.textPrimary(for: colorScheme).opacity(0.6), Color.clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: size, height: 4)
+                    .offset(y: scanOffset)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                            scanOffset = 18
+                        }
+                    }
+            }
+        }
+        .frame(width: size, height: size)
     }
 }
