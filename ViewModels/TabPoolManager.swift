@@ -2,42 +2,7 @@ import Foundation
 import WebKit
 import UIKit
 
-public struct TabRuntimeState: @unchecked Sendable {
-    public let tabID: UUID
-    public let webView: WKWebView
-    public var title: String
-    public var currentURL: URL?
-    public var progress: Double
-    public var isLoading: Bool
-    public var canGoBack: Bool
-    public var canGoForward: Bool
-    public var isSecure: Bool
-    public var blockedTrackersCount: Int
-
-    public init(
-        tabID: UUID,
-        webView: WKWebView,
-        title: String = "Nueva Pestaña",
-        currentURL: URL? = nil,
-        progress: Double = 0.0,
-        isLoading: Bool = false,
-        canGoBack: Bool = false,
-        canGoForward: Bool = false,
-        isSecure: Bool = false,
-        blockedTrackersCount: Int = 0
-    ) {
-        self.tabID = tabID
-        self.webView = webView
-        self.title = title
-        self.currentURL = currentURL
-        self.progress = progress
-        self.isLoading = isLoading
-        self.canGoBack = canGoBack
-        self.canGoForward = canGoForward
-        self.isSecure = isSecure
-        self.blockedTrackersCount = blockedTrackersCount
-    }
-}
+// MARK: - TabPoolManager
 
 public final class TabPoolManager: @unchecked Sendable {
     public static let shared = TabPoolManager()

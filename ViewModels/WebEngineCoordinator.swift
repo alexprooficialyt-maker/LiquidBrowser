@@ -3,13 +3,15 @@ import WebKit
 import Observation
 import UIKit
 
+// MARK: - WebEngineCoordinator
+
 @Observable
 public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
     public static let shared = WebEngineCoordinator()
 
     public var activeTabID: UUID?
     public var tabs: [TabModel] = []
-    public var spaces: [SpaceModel] = [SpaceModel.defaultSpace, SpaceModel.privateSpace]
+    public var spaces: [SpaceModel] = [SpaceModel.defaultSpace, SpaceModel.workSpace, SpaceModel.privateSpace]
     public var activeSpaceID: UUID = SpaceModel.defaultSpaceID
 
     public var currentProgress: Double = 0.0
@@ -62,34 +64,36 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
         tabs.filter { $0.spaceID == activeSpaceID }
     }
 
+    // MARK: - Tab Management
+
     public func selectTab(id: UUID) {
         guard let tab = tabs.first(where: { $0.id == id }) else { return }
-        self.activeTabID = id
-        self.activeSpaceID = tab.spaceID
+        activeTabID = id
+        activeSpaceID = tab.spaceID
 
         let webView = TabPoolManager.shared.webView(for: tab)
         bindWebViewObservers(webView: webView, for: tab)
 
-        if webView.url == nil, let initialURL = tab.url {
-            webView.load(URLRequest(url: initialURL))
+        if webView.url == nil, let targetURL = tab.url {
+            webView.load(URLRequest(url: targetURL))
         }
 
         updateSynchronousState(for: tab, webView: webView)
-        saveTabs()
     }
 
     public func createNewTab(url: URL? = nil, in spaceID: UUID? = nil) -> TabModel {
-        let targetSpace = spaceID ?? activeSpaceID
-        let isPrivate = spaces.first(where: { $0.id == targetSpace })?.isPrivate ?? false
+        let targetSpaceID = spaceID ?? activeSpaceID
+        let isPrivate = (targetSpaceID == SpaceModel.privateSpaceID)
+        let resolvedURL = url ?? URL(string: "https://www.google.com")
 
         let newTab = TabModel(
-            url: url ?? URL(string: "https://www.google.com"),
-            title: url == nil ? "Nueva Pestaña" : "Cargando…",
-            isPrivate: isPrivate,
-            spaceID: targetSpace
+            url: resolvedURL,
+            title: "Nueva Pestaña",
+            spaceID: targetSpaceID,
+            isPrivate: isPrivate
         )
 
-        tabs.append(newTab)
+        tabs.insert(newTab, at: 0)
         saveTabs()
         selectTab(id: newTab.id)
         return newTab
@@ -97,23 +101,54 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
 
     public func closeTab(id: UUID) {
         guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
-        let closingActive = (activeTabID == id)
         let closedTab = tabs.remove(at: index)
+        TabPoolManager.shared.removeWebView(for: closedTab.id)
 
-        TabPoolManager.shared.removeWebView(for: id)
-        if let snap = closedTab.snapshotFileName {
-            StorageEngine.shared.deleteSnapshot(fileName: snap)
+        if let snapshot = closedTab.snapshotFileName {
+            StorageEngine.shared.deleteSnapshot(fileName: snapshot)
         }
 
-        if tabs.isEmpty {
-            let fallback = createNewTab()
-            selectTab(id: fallback.id)
-        } else if closingActive {
-            let nextIndex = min(index, tabs.count - 1)
-            selectTab(id: tabs[nextIndex].id)
+        if activeTabID == id {
+            let spaceTabs = tabs.filter { $0.spaceID == activeSpaceID }
+            if let next = spaceTabs.first {
+                selectTab(id: next.id)
+            } else if let anyTab = tabs.first {
+                selectTab(id: anyTab.id)
+            } else {
+                _ = createNewTab(in: activeSpaceID)
+            }
         }
         saveTabs()
     }
+
+    // MARK: - Pin to Top (Poner Primero)
+
+    public func pinTabToTop(id: UUID) {
+        StorageEngine.shared.pinTabToTop(tabID: id, in: &tabs)
+        HapticManager.shared.notifySuccess()
+    }
+
+    public func unpinTab(id: UUID) {
+        StorageEngine.shared.unpinTab(tabID: id, in: &tabs)
+        HapticManager.shared.touchLight()
+    }
+
+    public func renameTab(id: UUID, newTitle: String) {
+        guard let idx = tabs.firstIndex(where: { $0.id == id }) else { return }
+        tabs[idx].customTitle = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if activeTabID == id {
+            currentDisplayTitle = tabs[idx].displayTitle
+        }
+        saveTabs()
+    }
+
+    public func moveTab(id: UUID, toSpace spaceID: UUID) {
+        guard let idx = tabs.firstIndex(where: { $0.id == id }) else { return }
+        tabs[idx].spaceID = spaceID
+        saveTabs()
+    }
+
+    // MARK: - Navigation
 
     public func navigate(to input: String) {
         guard let activeTab = activeTab else { return }
@@ -126,6 +161,8 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
             tabs[index].lastAccessed = Date()
             saveTabs()
         }
+
+        recordHistoryEntry(url: resolvedURL, query: input.contains(" ") ? input : nil)
     }
 
     public func loadURL(_ url: URL) {
@@ -160,21 +197,49 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
         }
     }
 
+    // MARK: - Snapshots
+
     public func captureSnapshotForActiveTab() {
         guard let activeTab = activeTab else { return }
         let webView = TabPoolManager.shared.webView(for: activeTab)
-        let config = WKSnapshotConfiguration()
-        config.rect = webView.bounds
+        guard webView.bounds.width > 0, webView.bounds.height > 0 else { return }
 
+        let config = WKSnapshotConfiguration()
+        config.snapshotWidth = 320
         webView.takeSnapshot(with: config) { [weak self] image, _ in
-            guard let self = self, let image = image else { return }
-            let fileName = StorageEngine.shared.saveSnapshot(image: image, for: activeTab.id)
-            if let index = self.tabs.firstIndex(where: { $0.id == activeTab.id }) {
-                self.tabs[index].snapshotFileName = fileName
+            guard let self = self, let img = image else { return }
+            let fileName = StorageEngine.shared.saveSnapshot(image: img, for: activeTab.id)
+            if let idx = self.tabs.firstIndex(where: { $0.id == activeTab.id }) {
+                self.tabs[idx].snapshotFileName = fileName
                 self.saveTabs()
             }
         }
     }
+
+    // MARK: - History Recording
+
+    private func recordHistoryEntry(url: URL, query: String?) {
+        guard let tab = activeTab, !tab.isPrivate else { return }
+
+        var entries: [HistoryEntry] = StorageEngine.shared.loadJSON(from: "history.json") ?? []
+        let newEntry = HistoryEntry(url: url, title: tab.displayTitle, visitedAt: Date(), searchQuery: query)
+        entries.insert(newEntry, at: 0)
+
+        // Limita a 500 entradas para rendimiento
+        if entries.count > 500 { entries = Array(entries.prefix(500)) }
+        StorageEngine.shared.saveJSON(entries, to: "history.json")
+
+        if let query = query, !query.isEmpty {
+            var searchEntries: [SearchHistoryEntry] = StorageEngine.shared.loadJSON(from: "search_history.json") ?? []
+            let engine = UserDefaults.standard.string(forKey: "searchEngine") ?? "Google"
+            let searchRecord = SearchHistoryEntry(query: query, engineUsed: engine)
+            searchEntries.insert(searchRecord, at: 0)
+            if searchEntries.count > 200 { searchEntries = Array(searchEntries.prefix(200)) }
+            StorageEngine.shared.saveJSON(searchEntries, to: "search_history.json")
+        }
+    }
+
+    // MARK: - Observers Binding
 
     private func bindWebViewObservers(webView: WKWebView, for tab: TabModel) {
         progressObserver?.invalidate()
@@ -227,6 +292,8 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
         currentIsSecure = tab.isSecure
     }
 
+    // MARK: - Burn Session
+
     public func burnSession() {
         TabPoolManager.shared.clearAll()
         StorageEngine.shared.cleanAllSnapshots()
@@ -253,6 +320,8 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
         }
     }
 }
+
+// MARK: - URLResolver
 
 public struct URLResolver {
     public static func resolve(input: String) -> URL {

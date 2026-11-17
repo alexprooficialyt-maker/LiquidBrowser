@@ -1,6 +1,8 @@
 import Foundation
 import WebKit
 
+// MARK: - ReaderModeParser
+
 public struct ReaderModeParser {
     public static let extractionScript = """
     (function() {
@@ -58,7 +60,7 @@ public struct ReaderModeParser {
             return
         }
 
-        webView.evaluateJavaScript(extractionScript) { result, error in
+        webView.evaluateJavaScript(extractionScript) { result, _ in
             guard let dict = result as? [String: Any],
                   let title = dict["title"] as? String,
                   let contentHTML = dict["contentHTML"] as? String,
