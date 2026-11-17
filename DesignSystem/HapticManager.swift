@@ -1,55 +1,63 @@
-import SwiftUI
 import UIKit
+
+// MARK: - HapticManager
 
 public final class HapticManager: @unchecked Sendable {
     public static let shared = HapticManager()
 
+    private let selectionGenerator = UISelectionFeedbackGenerator()
     private let lightImpact = UIImpactFeedbackGenerator(style: .light)
     private let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
     private let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
     private let rigidImpact = UIImpactFeedbackGenerator(style: .rigid)
-    private let selectionFeedback = UISelectionFeedbackGenerator()
-    private let notificationFeedback = UINotificationFeedbackGenerator()
+    private let softImpact = UIImpactFeedbackGenerator(style: .soft)
+    private let notificationGenerator = UINotificationFeedbackGenerator()
 
     private init() {
         prepare()
     }
 
     public func prepare() {
+        selectionGenerator.prepare()
         lightImpact.prepare()
         mediumImpact.prepare()
-        selectionFeedback.prepare()
+        heavyImpact.prepare()
+        notificationGenerator.prepare()
     }
 
     public func touchLight() {
-        lightImpact.impactOccurred(intensity: 0.75)
+        lightImpact.impactOccurred()
     }
 
     public func touchMedium() {
-        mediumImpact.impactOccurred(intensity: 0.85)
+        mediumImpact.impactOccurred()
     }
 
     public func touchHeavy() {
-        heavyImpact.impactOccurred(intensity: 1.0)
+        heavyImpact.impactOccurred()
     }
 
     public func touchRigid() {
-        rigidImpact.impactOccurred(intensity: 0.9)
+        rigidImpact.impactOccurred()
+    }
+
+    public func touchSoft() {
+        softImpact.impactOccurred()
     }
 
     public func selectionChanged() {
-        selectionFeedback.selectionChanged()
+        selectionGenerator.selectionChanged()
     }
 
     public func notifySuccess() {
-        notificationFeedback.notificationOccurred(.success)
+        notificationGenerator.notificationOccurred(.success)
     }
 
     public func notifyWarning() {
-        notificationFeedback.notificationOccurred(.warning)
+        notificationGenerator.notificationOccurred(.warning)
     }
 
     public func notifyError() {
-        notificationFeedback.notificationOccurred(.error)
+        notificationGenerator.notificationOccurred(.error)
     }
 }

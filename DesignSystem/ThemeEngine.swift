@@ -1,70 +1,100 @@
 import SwiftUI
 
-public enum ColorSchemePreference: String, CaseIterable, Codable, Sendable {
-    case system = "Sistema"
-    case light = "Claro"
-    case dark = "Oscuro"
-}
+// MARK: - AppThemeMode
 
-public enum AccentMonochrome: String, CaseIterable, Codable, Sendable {
-    case monochrome = "Monocromo"
-    case titanium = "Titanio"
-    case graphite = "Grafito"
-    case silver = "Plata"
+public enum AppThemeMode: String, CaseIterable, Codable, Sendable {
+    case system = "system"
+    case light = "light"
+    case dark = "dark"
 
-    public var lightTint: Color {
+    public var title: String {
         switch self {
-        case .monochrome: return Color.black
-        case .titanium:   return Color(red: 0.15, green: 0.15, blue: 0.17)
-        case .graphite:   return Color(red: 0.22, green: 0.22, blue: 0.25)
-        case .silver:     return Color(red: 0.35, green: 0.35, blue: 0.38)
+        case .system: return "Automático (Sistema)"
+        case .light:  return "Modo Claro Blanco"
+        case .dark:   return "Modo Oscuro Negro"
         }
     }
 
-    public var darkTint: Color {
+    public var colorScheme: ColorScheme? {
         switch self {
-        case .monochrome: return Color.white
-        case .titanium:   return Color(red: 0.90, green: 0.90, blue: 0.92)
-        case .graphite:   return Color(red: 0.82, green: 0.82, blue: 0.85)
-        case .silver:     return Color(red: 0.75, green: 0.75, blue: 0.78)
-        }
-    }
-}
-
-@Observable
-public final class ThemeEngine: @unchecked Sendable {
-    public static let shared = ThemeEngine()
-
-    public var preference: ColorSchemePreference {
-        didSet {
-            UserDefaults.standard.set(preference.rawValue, forKey: "theme_preference")
-        }
-    }
-
-    public var accentVariant: AccentMonochrome {
-        didSet {
-            UserDefaults.standard.set(accentVariant.rawValue, forKey: "theme_accent_monochrome")
-        }
-    }
-
-    public init() {
-        let storedPref = UserDefaults.standard.string(forKey: "theme_preference") ?? ColorSchemePreference.system.rawValue
-        self.preference = ColorSchemePreference(rawValue: storedPref) ?? .system
-
-        let storedAccent = UserDefaults.standard.string(forKey: "theme_accent_monochrome") ?? AccentMonochrome.monochrome.rawValue
-        self.accentVariant = AccentMonochrome(rawValue: storedAccent) ?? .monochrome
-    }
-
-    public func effectiveScheme(systemScheme: ColorScheme) -> ColorScheme {
-        switch preference {
-        case .system: return systemScheme
+        case .system: return nil
         case .light:  return .light
         case .dark:   return .dark
         }
     }
+}
+
+// MARK: - MonochromeAccentTone
+
+public enum MonochromeAccentTone: String, CaseIterable, Codable, Sendable {
+    case monochrome = "monochrome"
+    case titanium   = "titanium"
+    case graphite   = "graphite"
+    case silver     = "silver"
+
+    public var displayName: String {
+        switch self {
+        case .monochrome: return "Monocromo Puro"
+        case .titanium:   return "Titanio Natural"
+        case .graphite:   return "Grafito Oscuro"
+        case .silver:     return "Plata Líquida"
+        }
+    }
+
+    public func tint(for scheme: ColorScheme) -> Color {
+        switch self {
+        case .monochrome:
+            return scheme == .dark ? Color.white : Color.black
+        case .titanium:
+            return scheme == .dark ? Color(red: 0.90, green: 0.90, blue: 0.92) : Color(red: 0.16, green: 0.16, blue: 0.18)
+        case .graphite:
+            return scheme == .dark ? Color(red: 0.82, green: 0.82, blue: 0.85) : Color(red: 0.22, green: 0.22, blue: 0.25)
+        case .silver:
+            return scheme == .dark ? Color(red: 0.75, green: 0.75, blue: 0.78) : Color(red: 0.35, green: 0.35, blue: 0.38)
+        }
+    }
+}
+
+// MARK: - ThemeManager (@Observable Single Source of Truth)
+
+@Observable
+public final class ThemeManager: @unchecked Sendable {
+    public static let shared = ThemeManager()
+
+    public var currentMode: AppThemeMode {
+        didSet {
+            UserDefaults.standard.set(currentMode.rawValue, forKey: "app_theme_mode")
+        }
+    }
+
+    public var accentTone: MonochromeAccentTone {
+        didSet {
+            UserDefaults.standard.set(accentTone.rawValue, forKey: "app_monochrome_accent_tone")
+        }
+    }
+
+    public init() {
+        let storedMode = UserDefaults.standard.string(forKey: "app_theme_mode") ?? AppThemeMode.system.rawValue
+        self.currentMode = AppThemeMode(rawValue: storedMode) ?? .system
+
+        let storedAccent = UserDefaults.standard.string(forKey: "app_monochrome_accent_tone") ?? MonochromeAccentTone.titanium.rawValue
+        self.accentTone = MonochromeAccentTone(rawValue: storedAccent) ?? .titanium
+    }
+
+    // MARK: - ColorScheme Resolution
+
+    public var preferredColorScheme: ColorScheme? {
+        currentMode.colorScheme
+    }
+
+    public func effectiveScheme(systemScheme: ColorScheme) -> ColorScheme {
+        currentMode.colorScheme ?? systemScheme
+    }
+
+    // MARK: - Paleta Monocroma Estricta (Blanco, Negro, Cristal)
 
     public func background(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.black : Color(red: 0.98, green: 0.98, blue: 0.99)
+        scheme == .dark ? Color.black : Color(red: 0.985, green: 0.985, blue: 0.990)
     }
 
     public func surface(for scheme: ColorScheme) -> Color {
@@ -72,7 +102,11 @@ public final class ThemeEngine: @unchecked Sendable {
     }
 
     public func surfaceElevated(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(red: 0.12, green: 0.12, blue: 0.14) : Color(red: 0.95, green: 0.95, blue: 0.96)
+        scheme == .dark ? Color(red: 0.13, green: 0.13, blue: 0.15) : Color(red: 0.94, green: 0.94, blue: 0.96)
+    }
+
+    public func cardBackground(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color(white: 0.12) : Color.white
     }
 
     public func textPrimary(for scheme: ColorScheme) -> Color {
@@ -80,19 +114,39 @@ public final class ThemeEngine: @unchecked Sendable {
     }
 
     public func textSecondary(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(white: 0.65) : Color(white: 0.38)
+        scheme == .dark ? Color(white: 0.65) : Color(white: 0.40)
     }
 
     public func textTertiary(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(white: 0.40) : Color(white: 0.60)
+        scheme == .dark ? Color(white: 0.42) : Color(white: 0.62)
+    }
+
+    public func accent(for scheme: ColorScheme) -> Color {
+        accentTone.tint(for: scheme)
+    }
+
+    public func progressHighlight(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white : Color.black
+    }
+
+    public func glassMaterialFill(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.05) : Color.white.opacity(0.70)
+    }
+
+    public func shadowColor(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.black.opacity(0.60) : Color.black.opacity(0.09)
+    }
+
+    public func specularBorder(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? Color.white.opacity(0.18) : Color.black.opacity(0.11)
     }
 
     public func borderSpecular(for scheme: ColorScheme) -> LinearGradient {
         if scheme == .dark {
             return LinearGradient(
                 stops: [
-                    .init(color: Color.white.opacity(0.35), location: 0.0),
-                    .init(color: Color.white.opacity(0.12), location: 0.4),
+                    .init(color: Color.white.opacity(0.38), location: 0.0),
+                    .init(color: Color.white.opacity(0.12), location: 0.45),
                     .init(color: Color.white.opacity(0.04), location: 1.0)
                 ],
                 startPoint: .topLeading,
@@ -102,36 +156,16 @@ public final class ThemeEngine: @unchecked Sendable {
             return LinearGradient(
                 stops: [
                     .init(color: Color.white.opacity(0.95), location: 0.0),
-                    .init(color: Color.black.opacity(0.06), location: 0.5),
-                    .init(color: Color.black.opacity(0.12), location: 1.0)
+                    .init(color: Color.black.opacity(0.06), location: 0.50),
+                    .init(color: Color.black.opacity(0.14), location: 1.0)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         }
     }
-
-    public func glassMaterialFill(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.04) : Color.white.opacity(0.65)
-    }
-
-    public func shadowColor(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.black.opacity(0.55) : Color.black.opacity(0.08)
-    }
-
-    public func progressHighlight(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white : Color.black
-    }
-
-    public func specularBorder(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.18) : Color.black.opacity(0.10)
-    }
-
-    public func cardBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(white: 0.12) : Color.white
-    }
-
-    public func accent(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? accentVariant.darkTint : accentVariant.lightTint
-    }
 }
+
+// MARK: - Compatibility Alias for Existing Code
+
+public typealias ThemeEngine = ThemeManager

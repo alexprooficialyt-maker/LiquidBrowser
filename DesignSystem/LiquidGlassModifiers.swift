@@ -1,146 +1,109 @@
 import SwiftUI
 
-public struct LiquidGlassConfig {
+// MARK: - LiquidGlassConfig
+
+public struct LiquidGlassConfig: Sendable {
     public var cornerRadius: CGFloat
     public var material: Material
-    public var specularWidth: CGFloat
+    public var strokeWidth: CGFloat
     public var shadowRadius: CGFloat
     public var shadowY: CGFloat
-    public var shadowOpacity: Double
+    public var opacity: Double
 
     public init(
         cornerRadius: CGFloat = 19,
         material: Material = .ultraThinMaterial,
-        specularWidth: CGFloat = 0.5,
+        strokeWidth: CGFloat = 0.5,
         shadowRadius: CGFloat = 16,
         shadowY: CGFloat = 6,
-        shadowOpacity: Double = 0.35
+        opacity: Double = 1.0
     ) {
         self.cornerRadius = cornerRadius
         self.material = material
-        self.specularWidth = specularWidth
+        self.strokeWidth = strokeWidth
         self.shadowRadius = shadowRadius
         self.shadowY = shadowY
-        self.shadowOpacity = shadowOpacity
+        self.opacity = opacity
     }
 
+    // Configuración Óptima: Radio equilibrado 19pt continuo, no píldora extrema
     public static let capsuleBar = LiquidGlassConfig(
         cornerRadius: 19,
         material: .ultraThinMaterial,
-        specularWidth: 0.5,
-        shadowRadius: 18,
-        shadowY: 7,
-        shadowOpacity: 0.38
+        strokeWidth: 0.5,
+        shadowRadius: 16,
+        shadowY: 6
     )
 
     public static let card = LiquidGlassConfig(
-        cornerRadius: 16,
+        cornerRadius: 18,
         material: .thinMaterial,
-        specularWidth: 0.5,
-        shadowRadius: 10,
-        shadowY: 4,
-        shadowOpacity: 0.22
+        strokeWidth: 0.5,
+        shadowRadius: 12,
+        shadowY: 4
     )
 
     public static let chip = LiquidGlassConfig(
-        cornerRadius: 12,
+        cornerRadius: 14,
         material: .ultraThinMaterial,
-        specularWidth: 0.5,
+        strokeWidth: 0.5,
         shadowRadius: 6,
-        shadowY: 2,
-        shadowOpacity: 0.15
+        shadowY: 2
     )
 
-    public static let dialog = LiquidGlassConfig(
+    public static let sheet = LiquidGlassConfig(
         cornerRadius: 24,
-        material: .regularMaterial,
-        specularWidth: 0.6,
-        shadowRadius: 28,
-        shadowY: 12,
-        shadowOpacity: 0.45
+        material: .ultraThinMaterial,
+        strokeWidth: 0.5,
+        shadowRadius: 24,
+        shadowY: 10
     )
 }
+
+// MARK: - LiquidGlassContainer
 
 public struct LiquidGlassContainer: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     public var config: LiquidGlassConfig
 
+    public init(config: LiquidGlassConfig = .capsuleBar) {
+        self.config = config
+    }
+
     public func body(content: Content) -> some View {
-        let theme = ThemeEngine.shared
         let shape = RoundedRectangle(cornerRadius: config.cornerRadius, style: .continuous)
+        let theme = ThemeManager.shared
 
         content
             .background {
-                ZStack {
-                    shape
-                        .fill(config.material)
-
-                    shape
-                        .fill(theme.glassMaterialFill(for: colorScheme))
-
-                    if colorScheme == .dark {
+                shape
+                    .fill(config.material)
+                    .overlay {
                         shape
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.04), Color.clear],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                            .fill(theme.glassMaterialFill(for: colorScheme))
                     }
-                }
             }
-            .clipShape(shape)
             .overlay {
                 shape
                     .strokeBorder(
                         theme.borderSpecular(for: colorScheme),
-                        lineWidth: config.specularWidth
+                        lineWidth: config.strokeWidth
                     )
             }
             .shadow(
-                color: theme.shadowColor(for: colorScheme).opacity(config.shadowOpacity),
+                color: theme.shadowColor(for: colorScheme),
                 radius: config.shadowRadius,
                 x: 0,
                 y: config.shadowY
             )
+            .opacity(config.opacity)
     }
 }
 
-public struct LiquidMonochromeBadge: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    public var isHighlighted: Bool
-
-    public func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
-        content
-            .foregroundStyle(isHighlighted ? (colorScheme == .dark ? Color.black : Color.white) : (colorScheme == .dark ? Color.white : Color.black))
-            .background {
-                shape.fill(
-                    isHighlighted ? (colorScheme == .dark ? Color.white : Color.black) : (colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.08))
-                )
-            }
-            .overlay {
-                if !isHighlighted {
-                    shape.strokeBorder(
-                        colorScheme == .dark ? Color.white.opacity(0.18) : Color.black.opacity(0.12),
-                        lineWidth: 0.5
-                    )
-                }
-            }
-    }
-}
+// MARK: - View Extension
 
 extension View {
     public func liquidGlass(config: LiquidGlassConfig = .capsuleBar) -> some View {
         modifier(LiquidGlassContainer(config: config))
-    }
-
-    public func liquidGlassCustom(cornerRadius: CGFloat, material: Material = .ultraThinMaterial) -> some View {
-        modifier(LiquidGlassContainer(config: LiquidGlassConfig(cornerRadius: cornerRadius, material: material)))
-    }
-
-    public func monochromeBadge(isHighlighted: Bool = false) -> some View {
-        modifier(LiquidMonochromeBadge(isHighlighted: isHighlighted))
     }
 }
