@@ -15,10 +15,8 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-    TARGETED_DEVICE_FAMILY: "1"       # iPhone only
+    TARGETED_DEVICE_FAMILY: "1"
     ENABLE_BITCODE: NO
-    SWIFT_OPTIMIZATION_LEVEL: "-Onone"
-    DEBUG_INFORMATION_FORMAT: dwarf
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
 
 targets:
@@ -27,16 +25,17 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: LiquidBrowser
-        excludes:
-          - "**/*.md"
+      - path: App
+      - path: DesignSystem
+      - path: Models
+      - path: ViewModels
+      - path: Views
     settings:
       base:
-        INFOPLIST_FILE: LiquidBrowser/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: LiquidBrowser/Resources/LiquidBrowser.entitlements
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_FILE: Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/LiquidBrowser.entitlements
     info:
-      path: LiquidBrowser/Resources/Info.plist
+      path: Resources/Info.plist
       properties:
         CFBundleName: LiquidBrowser
         CFBundleDisplayName: "Liquid Browser"
