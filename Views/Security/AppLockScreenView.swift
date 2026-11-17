@@ -182,10 +182,12 @@ public struct AppLockScreenView: View {
 
     private func triggerBiometrics() {
         KeychainSecurityHelper.shared.authenticateWithBiometrics { success in
-            if success {
-                HapticManager.shared.notifySuccess()
-                withAnimation(LiquidAnimation.interactiveSpring) {
-                    onUnlocked()
+            DispatchQueue.main.async {
+                if success {
+                    HapticManager.shared.notifySuccess()
+                    withAnimation(LiquidAnimation.interactiveSpring) {
+                        self.onUnlocked()
+                    }
                 }
             }
         }

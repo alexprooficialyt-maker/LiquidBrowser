@@ -517,9 +517,11 @@ public struct SpacesTabGridView: View {
     private func unlockPrivateSpace() {
         if KeychainSecurityHelper.shared.isBiometricAuthEnabled {
             KeychainSecurityHelper.shared.authenticateWithBiometrics(reason: "Desbloquear Espacio Privado") { success in
-                if success {
-                    self.isPrivateUnlocked = true
-                    HapticManager.shared.notifySuccess()
+                DispatchQueue.main.async {
+                    if success {
+                        self.isPrivateUnlocked = true
+                        HapticManager.shared.notifySuccess()
+                    }
                 }
             }
         } else {

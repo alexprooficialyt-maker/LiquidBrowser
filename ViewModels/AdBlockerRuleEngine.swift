@@ -59,7 +59,7 @@ public final class AdBlockerRuleEngine: @unchecked Sendable {
     }
 
     public func compileRules() {
-        let store = WKContentRuleListStore.default()
+        guard let store = WKContentRuleListStore.default() else { return }
 
         store.compileContentRuleList(
             forIdentifier: ruleListIdentifier,
@@ -68,7 +68,9 @@ public final class AdBlockerRuleEngine: @unchecked Sendable {
             if let error = error {
                 NSLog("AdBlocker compile error: \(error.localizedDescription)")
             } else if let list = list {
-                self?.ruleList = list
+                DispatchQueue.main.async {
+                    self?.ruleList = list
+                }
             }
         }
     }

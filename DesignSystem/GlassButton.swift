@@ -85,7 +85,7 @@ public struct LiquidIconButton: View {
                     type,
                     size: iconSize,
                     color: isHighlighted ? (colorScheme == .dark ? Color.black : Color.white) : theme.textPrimary(for: colorScheme),
-                    lineWidth: 1.5
+                    strokeWidth: 1.5
                 )
             }
             .frame(width: size, height: size)

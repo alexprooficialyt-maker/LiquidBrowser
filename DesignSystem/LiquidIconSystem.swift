@@ -573,12 +573,13 @@ public struct LiquidIconView: View {
         _ type: LiquidIconType,
         size: CGFloat = 20,
         color: Color? = nil,
-        strokeWidth: CGFloat = 1.5
+        strokeWidth: CGFloat = 1.5,
+        lineWidth: CGFloat? = nil
     ) {
         self.type = type
         self.size = size
         self.color = color
-        self.strokeWidth = strokeWidth
+        self.strokeWidth = lineWidth ?? strokeWidth
     }
 
     public var body: some View {
