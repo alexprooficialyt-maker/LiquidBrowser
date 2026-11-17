@@ -2,7 +2,7 @@ import Foundation
 import WebKit
 import UIKit
 
-// MARK: - TabPoolManager
+// MARK: - TabPoolManager (In-Memory Multi-Instance WebKit Pool)
 
 public final class TabPoolManager: @unchecked Sendable {
     public static let shared = TabPoolManager()
@@ -16,7 +16,7 @@ public final class TabPoolManager: @unchecked Sendable {
         config.mediaTypesRequiringUserActionForPlayback = []
         config.websiteDataStore = .default()
 
-        if let ruleList = AdBlockerRuleEngine.shared.ruleList {
+        if let ruleList = AntiTrackerEngine.shared.ruleList {
             config.userContentController.add(ruleList)
         }
         return config
@@ -28,7 +28,7 @@ public final class TabPoolManager: @unchecked Sendable {
         config.mediaTypesRequiringUserActionForPlayback = []
         config.websiteDataStore = .nonPersistent()
 
-        if let ruleList = AdBlockerRuleEngine.shared.ruleList {
+        if let ruleList = AntiTrackerEngine.shared.ruleList {
             config.userContentController.add(ruleList)
         }
         return config
@@ -46,7 +46,12 @@ public final class TabPoolManager: @unchecked Sendable {
 
         let config = tab.isPrivate ? privateConfiguration : defaultConfiguration
         let webView = WKWebView(frame: .zero, configuration: config)
+
+        // SOLUCIÓN DEFINITIVA A TOQUES Y GESTOS:
+        // 1. Gestos nativos de navegación lateral de Safari (sin capas transparentes encima)
         webView.allowsBackForwardNavigationGestures = true
+        webView.allowsLinkPreview = true
+        webView.scrollView.keyboardDismissMode = .onDrag
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.isOpaque = false
         webView.backgroundColor = .clear

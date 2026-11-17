@@ -3,254 +3,214 @@ import WebKit
 import Observation
 import UIKit
 
-// MARK: - WebEngineCoordinator
+// MARK: - WebEngineCoordinator (@Observable Main WebKit Engine Coordinator)
 
 @Observable
-public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
+public final class WebEngineCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, @unchecked Sendable {
     public static let shared = WebEngineCoordinator()
 
-    public var activeTabID: UUID?
-    public var tabs: [TabModel] = []
-    public var spaces: [SpaceModel] = [SpaceModel.defaultSpace, SpaceModel.workSpace, SpaceModel.privateSpace]
-    public var activeSpaceID: UUID = SpaceModel.defaultSpaceID
-
+    // Progreso y Estado de Carga
     public var currentProgress: Double = 0.0
     public var currentIsLoading: Bool = false
     public var currentCanGoBack: Bool = false
     public var currentCanGoForward: Bool = false
-    public var currentIsSecure: Bool = false
-    public var currentBlockedCount: Int = 0
+    public var currentIsSecure: Bool = true
     public var currentURLString: String = ""
     public var currentDisplayTitle: String = ""
+    public var currentSSLInfo: SSLCertificateInfo? = nil
 
-    private var activeWebViewObserver: NSKeyValueObservation?
+    // Modo Oscuro Inyectado
+    public var isDarkModeInjected: Bool = false
+
+    // Búsqueda en Página
+    public var findSearchText: String = ""
+    public var findCurrentMatch: Int = 0
+    public var findTotalMatches: Int = 0
+
+    // Observadores KVO
     private var progressObserver: NSKeyValueObservation?
     private var titleObserver: NSKeyValueObservation?
     private var urlObserver: NSKeyValueObservation?
+    private var canGoBackObserver: NSKeyValueObservation?
+    private var canGoForwardObserver: NSKeyValueObservation?
+    private var loadingObserver: NSKeyValueObservation?
 
     public override init() {
         super.init()
-        loadPersistedState()
+        setupActiveTab()
     }
 
-    private func loadPersistedState() {
-        if let storedSpaces = StorageEngine.shared.load([SpaceModel].self, from: "spaces.json"), !storedSpaces.isEmpty {
-            self.spaces = storedSpaces
-        }
-        if let storedTabs = StorageEngine.shared.load([TabModel].self, from: "tabs.json"), !storedTabs.isEmpty {
-            self.tabs = storedTabs
-            self.activeTabID = storedTabs.first?.id
-        } else {
-            let initialTab = TabModel(url: URL(string: "https://www.google.com"), title: "Google", spaceID: SpaceModel.defaultSpaceID)
-            self.tabs = [initialTab]
-            self.activeTabID = initialTab.id
-            saveTabs()
+    public func setupActiveTab() {
+        if let tab = StorageEngine.shared.activeTab {
+            selectTab(id: tab.id)
         }
     }
 
-    public func saveTabs() {
-        StorageEngine.shared.save(tabs, to: "tabs.json")
-    }
-
-    public func saveSpaces() {
-        StorageEngine.shared.save(spaces, to: "spaces.json")
-    }
-
-    public var activeTab: TabModel? {
-        tabs.first { $0.id == activeTabID }
-    }
-
-    public var tabsInActiveSpace: [TabModel] {
-        tabs.filter { $0.spaceID == activeSpaceID }
-    }
-
-    // MARK: - Tab Management
+    // MARK: - Tab Selection & Multi-Instance In-Memory Pool
 
     public func selectTab(id: UUID) {
-        guard let tab = tabs.first(where: { $0.id == id }) else { return }
-        activeTabID = id
-        activeSpaceID = tab.spaceID
+        StorageEngine.shared.activeTabID = id
+        guard let tab = StorageEngine.shared.activeTab else { return }
 
         let webView = TabPoolManager.shared.webView(for: tab)
-        bindWebViewObservers(webView: webView, for: tab)
+        webView.navigationDelegate = self
+        webView.uiDelegate = self
 
-        if webView.url == nil, let targetURL = tab.url {
-            webView.load(URLRequest(url: targetURL))
+        bindObservers(to: webView, for: tab)
+
+        // Si la pestaña tiene URL y aún no ha cargado nada, cargarla
+        if webView.url == nil, let url = tab.url {
+            webView.load(URLRequest(url: url))
         }
 
-        updateSynchronousState(for: tab, webView: webView)
+        updateStateFromWebView(webView, for: tab)
     }
 
-    public func createNewTab(url: URL? = nil, in spaceID: UUID? = nil) -> TabModel {
-        let targetSpaceID = spaceID ?? activeSpaceID
-        let isPrivate = (targetSpaceID == SpaceModel.privateSpaceID)
-        let resolvedURL = url ?? URL(string: "https://www.google.com")
-
-        let newTab = TabModel(
-            url: resolvedURL,
-            title: "Nueva Pestaña",
-            spaceID: targetSpaceID,
-            isPrivate: isPrivate
-        )
-
-        tabs.insert(newTab, at: 0)
-        saveTabs()
+    public func createNewTab(url: URL? = nil, inSpace spaceID: UUID? = nil, isPrivate: Bool = false) -> TabModel {
+        let newTab = StorageEngine.shared.createTab(url: url, spaceID: spaceID, isPrivate: isPrivate)
         selectTab(id: newTab.id)
+
+        if let url = url {
+            let webView = TabPoolManager.shared.webView(for: newTab)
+            webView.load(URLRequest(url: url))
+        }
+
         return newTab
     }
 
     public func closeTab(id: UUID) {
-        guard let index = tabs.firstIndex(where: { $0.id == id }) else { return }
-        let closedTab = tabs.remove(at: index)
-        TabPoolManager.shared.removeWebView(for: closedTab.id)
+        TabPoolManager.shared.removeWebView(for: id)
+        StorageEngine.shared.closeTab(id: id)
 
-        if let snapshot = closedTab.snapshotFileName {
-            StorageEngine.shared.deleteSnapshot(fileName: snapshot)
+        if let nextTab = StorageEngine.shared.activeTab {
+            selectTab(id: nextTab.id)
         }
-
-        if activeTabID == id {
-            let spaceTabs = tabs.filter { $0.spaceID == activeSpaceID }
-            if let next = spaceTabs.first {
-                selectTab(id: next.id)
-            } else if let anyTab = tabs.first {
-                selectTab(id: anyTab.id)
-            } else {
-                _ = createNewTab(in: activeSpaceID)
-            }
-        }
-        saveTabs()
     }
 
-    // MARK: - Pin to Top (Poner Primero)
-
-    public func pinTabToTop(id: UUID) {
-        StorageEngine.shared.pinTabToTop(tabID: id, in: &tabs)
-        HapticManager.shared.notifySuccess()
-    }
-
-    public func unpinTab(id: UUID) {
-        StorageEngine.shared.unpinTab(tabID: id, in: &tabs)
-        HapticManager.shared.touchLight()
-    }
-
-    public func renameTab(id: UUID, newTitle: String) {
-        guard let idx = tabs.firstIndex(where: { $0.id == id }) else { return }
-        tabs[idx].customTitle = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        if activeTabID == id {
-            currentDisplayTitle = tabs[idx].displayTitle
-        }
-        saveTabs()
-    }
-
-    public func moveTab(id: UUID, toSpace spaceID: UUID) {
-        guard let idx = tabs.firstIndex(where: { $0.id == id }) else { return }
-        tabs[idx].spaceID = spaceID
-        saveTabs()
-    }
-
-    // MARK: - Navigation
+    // MARK: - Browser Actions (100% Touch & Keyboard Compliant)
 
     public func navigate(to input: String) {
-        guard let activeTab = activeTab else { return }
+        guard let tab = StorageEngine.shared.activeTab else { return }
         let resolvedURL = URLResolver.resolve(input: input)
-        let webView = TabPoolManager.shared.webView(for: activeTab)
+        let webView = TabPoolManager.shared.webView(for: tab)
 
         webView.load(URLRequest(url: resolvedURL))
-        if let index = tabs.firstIndex(where: { $0.id == activeTab.id }) {
-            tabs[index].url = resolvedURL
-            tabs[index].lastAccessed = Date()
-            saveTabs()
+        StorageEngine.shared.updateTabURL(id: tab.id, url: resolvedURL, title: nil)
+
+        // Registrar búsqueda o visita
+        let isSearch = !input.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("http") && (!input.contains(".") || input.contains(" "))
+        if isSearch {
+            let engineRaw = UserDefaults.standard.string(forKey: "smartbot_default_search_engine") ?? SearchEngineType.google.rawValue
+            let engine = SearchEngineType(rawValue: engineRaw) ?? .google
+            StorageEngine.shared.recordSearch(query: input, engine: engine)
         }
 
-        recordHistoryEntry(url: resolvedURL, query: input.contains(" ") ? input : nil)
+        StorageEngine.shared.recordVisit(
+            url: resolvedURL,
+            title: tab.displayTitle,
+            isSearch: isSearch,
+            query: isSearch ? input : nil
+        )
     }
 
     public func loadURL(_ url: URL) {
-        navigate(to: url.absoluteString)
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
+        webView.load(URLRequest(url: url))
+        StorageEngine.shared.updateTabURL(id: tab.id, url: url, title: nil)
+        StorageEngine.shared.recordVisit(url: url, title: tab.displayTitle)
     }
 
     public func reload() {
-        guard let activeTab = activeTab else { return }
-        let webView = TabPoolManager.shared.webView(for: activeTab)
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
         webView.reload()
     }
 
     public func stop() {
-        guard let activeTab = activeTab else { return }
-        let webView = TabPoolManager.shared.webView(for: activeTab)
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
         webView.stopLoading()
     }
 
     public func goBack() {
-        guard let activeTab = activeTab else { return }
-        let webView = TabPoolManager.shared.webView(for: activeTab)
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
         if webView.canGoBack {
             webView.goBack()
         }
     }
 
     public func goForward() {
-        guard let activeTab = activeTab else { return }
-        let webView = TabPoolManager.shared.webView(for: activeTab)
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
         if webView.canGoForward {
             webView.goForward()
         }
     }
 
-    // MARK: - Snapshots
+    // MARK: - SSL Inspection
 
-    public func captureSnapshotForActiveTab() {
-        guard let activeTab = activeTab else { return }
-        let webView = TabPoolManager.shared.webView(for: activeTab)
-        guard webView.bounds.width > 0, webView.bounds.height > 0 else { return }
+    public func triggerSSLInspection() {
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
+        let info = SSLInspectorEngine.shared.inspect(url: webView.url ?? tab.url, serverTrust: webView.serverTrust)
+        self.currentSSLInfo = info
+        self.currentIsSecure = info.isSecure
+    }
 
-        let config = WKSnapshotConfiguration()
-        config.snapshotWidth = 320
-        webView.takeSnapshot(with: config) { [weak self] image, _ in
-            guard let self = self, let img = image else { return }
-            let fileName = StorageEngine.shared.saveSnapshot(image: img, for: activeTab.id)
-            if let idx = self.tabs.firstIndex(where: { $0.id == activeTab.id }) {
-                self.tabs[idx].snapshotFileName = fileName
-                self.saveTabs()
-            }
+    // MARK: - Reader Mode & PDF Export
+
+    public func extractReaderArticle(completion: @escaping @Sendable (ReaderArticle?) -> Void) {
+        guard let tab = StorageEngine.shared.activeTab else {
+            completion(nil)
+            return
+        }
+        let webView = TabPoolManager.shared.webView(for: tab)
+        ReaderModeParser.parse(webView: webView) { article in
+            completion(article)
         }
     }
 
-    // MARK: - History Recording
+    // MARK: - Dark Mode CSS Injection
 
-    private func recordHistoryEntry(url: URL, query: String?) {
-        guard let tab = activeTab, !tab.isPrivate else { return }
-
-        var entries: [HistoryEntry] = StorageEngine.shared.loadJSON(from: "history.json") ?? []
-        let newEntry = HistoryEntry(url: url, title: tab.displayTitle, visitedAt: Date(), searchQuery: query)
-        entries.insert(newEntry, at: 0)
-
-        // Limita a 500 entradas para rendimiento
-        if entries.count > 500 { entries = Array(entries.prefix(500)) }
-        StorageEngine.shared.saveJSON(entries, to: "history.json")
-
-        if let query = query, !query.isEmpty {
-            var searchEntries: [SearchHistoryEntry] = StorageEngine.shared.loadJSON(from: "search_history.json") ?? []
-            let engine = UserDefaults.standard.string(forKey: "searchEngine") ?? "Google"
-            let searchRecord = SearchHistoryEntry(query: query, engineUsed: engine)
-            searchEntries.insert(searchRecord, at: 0)
-            if searchEntries.count > 200 { searchEntries = Array(searchEntries.prefix(200)) }
-            StorageEngine.shared.saveJSON(searchEntries, to: "search_history.json")
-        }
+    public func toggleDarkMode() {
+        guard let tab = StorageEngine.shared.activeTab else { return }
+        let webView = TabPoolManager.shared.webView(for: tab)
+        isDarkModeInjected.toggle()
+        DarkModeCSSInjector.shared.apply(to: webView, enabled: isDarkModeInjected)
     }
 
-    // MARK: - Observers Binding
+    // MARK: - KVO Observers
 
-    private func bindWebViewObservers(webView: WKWebView, for tab: TabModel) {
+    private func bindObservers(to webView: WKWebView, for tab: TabModel) {
         progressObserver?.invalidate()
         titleObserver?.invalidate()
         urlObserver?.invalidate()
+        canGoBackObserver?.invalidate()
+        canGoForwardObserver?.invalidate()
+        loadingObserver?.invalidate()
 
         progressObserver = webView.observe(\.estimatedProgress, options: [.new]) { [weak self] wv, _ in
             DispatchQueue.main.async {
                 self?.currentProgress = wv.estimatedProgress
+            }
+        }
+
+        loadingObserver = webView.observe(\.isLoading, options: [.new]) { [weak self] wv, _ in
+            DispatchQueue.main.async {
                 self?.currentIsLoading = wv.isLoading
+            }
+        }
+
+        canGoBackObserver = webView.observe(\.canGoBack, options: [.new]) { [weak self] wv, _ in
+            DispatchQueue.main.async {
                 self?.currentCanGoBack = wv.canGoBack
+            }
+        }
+
+        canGoForwardObserver = webView.observe(\.canGoForward, options: [.new]) { [weak self] wv, _ in
+            DispatchQueue.main.async {
                 self?.currentCanGoForward = wv.canGoForward
             }
         }
@@ -260,89 +220,48 @@ public final class WebEngineCoordinator: NSObject, @unchecked Sendable {
                 guard let self = self else { return }
                 let newTitle = wv.title ?? ""
                 self.currentDisplayTitle = newTitle
-                if let index = self.tabs.firstIndex(where: { $0.id == tab.id }) {
-                    self.tabs[index].title = newTitle.isEmpty ? self.tabs[index].displayHost : newTitle
-                    self.saveTabs()
-                }
+                StorageEngine.shared.updateTabURL(id: tab.id, url: nil, title: newTitle)
             }
         }
 
         urlObserver = webView.observe(\.url, options: [.new]) { [weak self] wv, _ in
             DispatchQueue.main.async {
-                guard let self = self else { return }
-                if let newURL = wv.url {
-                    self.currentURLString = newURL.absoluteString
-                    self.currentIsSecure = (newURL.scheme?.lowercased() == "https")
-                    if let index = self.tabs.firstIndex(where: { $0.id == tab.id }) {
-                        self.tabs[index].url = newURL
-                        self.saveTabs()
-                    }
-                }
+                guard let self = self, let newURL = wv.url else { return }
+                self.currentURLString = newURL.absoluteString
+                self.currentIsSecure = (newURL.scheme?.lowercased() == "https")
+                StorageEngine.shared.updateTabURL(id: tab.id, url: newURL, title: nil)
+                self.triggerSSLInspection()
             }
         }
     }
 
-    private func updateSynchronousState(for tab: TabModel, webView: WKWebView) {
+    private func updateStateFromWebView(_ webView: WKWebView, for tab: TabModel) {
         currentProgress = webView.estimatedProgress
         currentIsLoading = webView.isLoading
         currentCanGoBack = webView.canGoBack
         currentCanGoForward = webView.canGoForward
         currentURLString = webView.url?.absoluteString ?? tab.url?.absoluteString ?? ""
         currentDisplayTitle = webView.title ?? tab.displayTitle
-        currentIsSecure = tab.isSecure
+        currentIsSecure = (webView.url?.scheme?.lowercased() == "https")
+        triggerSSLInspection()
     }
 
-    // MARK: - Burn Session
+    // MARK: - WKNavigationDelegate
 
-    public func burnSession() {
-        TabPoolManager.shared.clearAll()
-        StorageEngine.shared.cleanAllSnapshots()
-
-        let websiteDataTypes = WKWebsiteDataStore.allWebsiteDataTypes()
-        WKWebsiteDataStore.default().removeData(ofTypes: websiteDataTypes, modifiedSince: Date.distantPast) {}
-
-        tabs = []
-        let initialTab = TabModel(url: URL(string: "https://www.google.com"), title: "Google", spaceID: SpaceModel.defaultSpaceID)
-        tabs = [initialTab]
-        activeTabID = initialTab.id
-        saveTabs()
-        selectTab(id: initialTab.id)
+    public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        currentIsLoading = true
     }
 
-    public func extractReaderArticle(completion: @escaping @Sendable (ReaderArticle?) -> Void) {
-        guard let tab = activeTab else {
-            completion(nil)
-            return
-        }
-        let webView = TabPoolManager.shared.webView(for: tab)
-        ReaderModeParser.parse(webView: webView) { article in
-            completion(article)
-        }
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        currentIsLoading = false
+        triggerSSLInspection()
     }
-}
 
-// MARK: - URLResolver
+    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        currentIsLoading = false
+    }
 
-public struct URLResolver {
-    public static func resolve(input: String) -> URL {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
-            if let valid = URL(string: trimmed) { return valid }
-        }
-        if !trimmed.contains(" ") && trimmed.contains(".") && !trimmed.hasSuffix(".") {
-            if let valid = URL(string: "https://\(trimmed)") { return valid }
-        }
-
-        let engineRaw = UserDefaults.standard.string(forKey: "searchEngine") ?? "Google"
-        let baseSearch: String
-        switch engineRaw {
-        case "DuckDuckGo": baseSearch = "https://duckduckgo.com/?q="
-        case "Brave":      baseSearch = "https://search.brave.com/search?q="
-        case "Ecosia":     baseSearch = "https://www.ecosia.org/search?q="
-        default:           baseSearch = "https://www.google.com/search?q="
-        }
-
-        let encoded = trimmed.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? trimmed
-        return URL(string: "\(baseSearch)\(encoded)") ?? URL(string: "https://www.google.com")!
+    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        currentIsLoading = false
     }
 }

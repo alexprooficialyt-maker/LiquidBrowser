@@ -2,29 +2,31 @@ import SwiftUI
 
 @main
 struct LiquidBrowserApp: App {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var storage = StorageEngine.shared
     @State private var themeManager = ThemeManager.shared
+    @State private var lockManager = BiometricLockManager.shared
     @Environment(\.scenePhase) private var scenePhase
-
-    @State private var isAppLocked: Bool = KeychainSecurityHelper.shared.isAppLockEnabled
 
     var body: some Scene {
         WindowGroup {
             ZStack {
                 Group {
-                    if hasCompletedOnboarding {
+                    if storage.hasCompletedOnboarding {
                         BrowserRootView()
                     } else {
                         OnboardingView {
-                            hasCompletedOnboarding = true
+                            withAnimation(LiquidAnimation.smoothSpring) {
+                                storage.hasCompletedOnboarding = true
+                            }
                         }
                     }
                 }
 
-                if hasCompletedOnboarding && isAppLocked && KeychainSecurityHelper.shared.isAppLockEnabled {
+                // Pantalla de Bloqueo Persistente de Seguridad
+                if storage.hasCompletedOnboarding && lockManager.isAppLocked && KeychainVault.shared.isAppLockEnabled {
                     AppLockScreenView {
                         withAnimation(LiquidAnimation.interactiveSpring) {
-                            isAppLocked = false
+                            lockManager.isAppLocked = false
                         }
                     }
                     .transition(.opacity)
@@ -33,8 +35,11 @@ struct LiquidBrowserApp: App {
             }
             .preferredColorScheme(themeManager.preferredColorScheme)
             .onChange(of: scenePhase) { _, newPhase in
-                if newPhase == .background && KeychainSecurityHelper.shared.isAppLockEnabled {
-                    isAppLocked = true
+                lockManager.handleScenePhaseChange(newPhase)
+            }
+            .onAppear {
+                if KeychainVault.shared.isAppLockEnabled {
+                    lockManager.isAppLocked = true
                 }
             }
         }

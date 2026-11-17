@@ -1,148 +1,169 @@
 import SwiftUI
 import LocalAuthentication
 
-// MARK: - AppLockScreenView (Monochrome Liquid Glass App Lock)
+// MARK: - AppLockScreenView (Persistent Apple Liquid Glass Lock Screen)
 
 public struct AppLockScreenView: View {
+    @Environment(\.colorScheme) private var systemColorScheme
+    public var onUnlocked: () -> Void
+
     @State private var pinInput: String = ""
     @State private var attemptsCount: Int = 0
     @State private var isShaking: Bool = false
     @State private var errorMessage: String? = nil
+    @State private var isBiometricScanning: Bool = false
 
-    @Environment(\.colorScheme) private var colorScheme
-    public var onUnlocked: () -> Void
-
-    public init(onUnlocked: @escaping () -> Void) {
+    public init(onUnlocked: @escaping () -> Void = {}) {
         self.onUnlocked = onUnlocked
     }
 
     public var body: some View {
         let theme = ThemeManager.shared
+        let scheme = theme.effectiveScheme(systemScheme: systemColorScheme)
+        let bioType = KeychainVault.shared.biometricType
+        let hasBio = KeychainVault.shared.isBiometricAuthEnabled && KeychainVault.shared.canUseBiometrics
 
         ZStack {
-            // Fondo cristalino líquido desenfocado
-            theme.background(for: colorScheme)
+            // Fondo de Cristal Monocromo Protegido
+            theme.background(for: scheme)
                 .ignoresSafeArea()
 
-            VStack(spacing: 28) {
+            VStack(spacing: 24) {
                 Spacer()
 
-                // Cabecera de Bloqueo
-                VStack(spacing: 12) {
-                    LiquidIconView(
-                        KeychainSecurityHelper.shared.isBiometricAuthEnabled ?
-                            (KeychainSecurityHelper.shared.biometricType == .faceID ? .faceID : .touchID) :
-                            .lockSSL,
-                        size: 52,
-                        color: theme.textPrimary(for: colorScheme)
-                    )
+                // Icono Central de Bloqueo / Biometría
+                ZStack {
+                    Circle()
+                        .fill(theme.glassMaterialFill(for: scheme))
+                        .frame(width: 88, height: 88)
+                        .overlay {
+                            Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                        }
 
-                    Text("LiquidBrowser Protegido")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(theme.textPrimary(for: colorScheme))
+                    if hasBio {
+                        AnimatedBiometricIcon(type: bioType, isScanning: isBiometricScanning, size: 44)
+                    } else {
+                        LiquidIconView(.lockSSL, size: 40, color: theme.textPrimary(for: scheme))
+                    }
+                }
+                .padding(.bottom, 8)
 
-                    Text(errorMessage ?? "Introduce tu PIN de 4 dígitos para continuar")
-                        .font(.system(size: 14, design: .rounded))
-                        .foregroundStyle(errorMessage != nil ? Color.red : theme.textSecondary(for: colorScheme))
+                // Títulos Informativos
+                VStack(spacing: 6) {
+                    Text(Loc.tr("lock_title"))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundStyle(theme.textPrimary(for: scheme))
+
+                    Text(hasBio ? (bioType == .faceID ? Loc.tr("lock_subtitle_faceid") : Loc.tr("lock_subtitle_touchid")) : Loc.tr("lock_subtitle_pin"))
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(theme.textSecondary(for: scheme))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                 }
 
-                // Indicador visual de los 4 dígitos
-                HStack(spacing: 16) {
-                    ForEach(0..<4) { i in
-                        ZStack {
-                            Circle()
-                                .strokeBorder(theme.specularBorder(for: colorScheme), lineWidth: 1.5)
-                                .frame(width: 18, height: 18)
-
-                            if i < pinInput.count {
-                                Circle()
-                                    .fill(theme.textPrimary(for: colorScheme))
-                                    .frame(width: 12, height: 12)
+                // 4 Puntos de Estado de PIN
+                HStack(spacing: 18) {
+                    ForEach(0..<4, id: \.self) { index in
+                        Circle()
+                            .fill(index < pinInput.count ? theme.textPrimary(for: scheme) : theme.textPrimary(for: scheme).opacity(0.18))
+                            .frame(width: 15, height: 15)
+                            .overlay {
+                                Circle().strokeBorder(theme.specularBorder(for: scheme), lineWidth: 0.5)
                             }
-                        }
+                            .scaleEffect(index < pinInput.count ? 1.15 : 1.0)
+                            .animation(LiquidAnimation.snappySpring, value: pinInput.count)
                     }
                 }
-                .modifier(ShakeEffect(shakes: isShaking ? 2 : 0))
+                .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))
                 .animation(LiquidAnimation.snappySpring, value: isShaking)
                 .padding(.vertical, 8)
 
-                // Teclado Numérico Monocromo Artesanal
-                keypadGrid
-                    .padding(.horizontal, 40)
+                // Mensaje de Error si falla
+                if let err = errorMessage {
+                    Text(err)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color(red: 0.95, green: 0.25, blue: 0.25))
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                } else {
+                    Text(" ")
+                        .font(.system(size: 13))
+                }
+
+                // Teclado Numérico 3x4 Estilo Apple
+                numericKeypad(theme: theme, scheme: scheme, hasBio: hasBio, bioType: bioType)
 
                 Spacer()
-
-                // Botón Biométrico si está disponible
-                if KeychainSecurityHelper.shared.isBiometricAuthEnabled && KeychainSecurityHelper.shared.canEvaluateBiometrics {
-                    Button(action: {
-                        triggerBiometrics()
-                    }) {
-                        HStack(spacing: 8) {
-                            LiquidIconView(KeychainSecurityHelper.shared.biometricType == .faceID ? .faceID : .touchID,
-                                           size: 18,
-                                           color: theme.textPrimary(for: colorScheme))
-
-                            Text(KeychainSecurityHelper.shared.biometricType == .faceID ? "Desbloquear con Face ID" : "Desbloquear con Touch ID")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(theme.textPrimary(for: colorScheme))
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 10)
-                        .liquidGlass(config: .chip)
-                    }
-                    .pressableFeedback()
-                    .padding(.bottom, 24)
-                }
             }
+            .padding(.horizontal, 24)
         }
         .onAppear {
-            if KeychainSecurityHelper.shared.isBiometricAuthEnabled {
+            if hasBio {
                 triggerBiometrics()
             }
         }
     }
 
-    // MARK: - Keypad Grid
+    // MARK: - Teclado Numérico Apple Liquid Glass
 
     @ViewBuilder
-    private var keypadGrid: some View {
-        let theme = ThemeManager.shared
-        let numbers = [
+    private func numericKeypad(theme: ThemeManager, scheme: ColorScheme, hasBio: Bool, bioType: LABiometryType) -> some View {
+        let keys = [
             ["1", "2", "3"],
             ["4", "5", "6"],
             ["7", "8", "9"],
-            ["", "0", "delete"]
+            ["bio", "0", "delete"]
         ]
 
         VStack(spacing: 14) {
-            ForEach(numbers, id: \.self) { row in
-                HStack(spacing: 20) {
+            ForEach(keys, id: \.self) { row in
+                HStack(spacing: 24) {
                     ForEach(row, id: \.self) { key in
-                        if key.isEmpty {
-                            Spacer().frame(width: 68, height: 68)
+                        if key == "bio" {
+                            if hasBio {
+                                Button {
+                                    HapticManager.shared.touchLight()
+                                    triggerBiometrics()
+                                } label: {
+                                    LiquidIconView(bioType == .faceID ? .faceID : .touchID, size: 28, color: theme.textPrimary(for: scheme))
+                                        .frame(width: 72, height: 72)
+                                        .background(theme.surfaceElevated(for: scheme).opacity(0.6))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                Color.clear.frame(width: 72, height: 72)
+                            }
                         } else if key == "delete" {
-                            Button(action: {
+                            Button {
                                 HapticManager.shared.touchLight()
-                                if !pinInput.isEmpty { pinInput.removeLast() }
-                            }) {
-                                LiquidIconView(.close, size: 20, color: theme.textPrimary(for: colorScheme))
-                                    .frame(width: 68, height: 68)
-                                    .liquidGlass(config: .chip)
+                                if !pinInput.isEmpty {
+                                    pinInput.removeLast()
+                                    errorMessage = nil
+                                }
+                            } label: {
+                                LiquidIconView(.close, size: 22, color: theme.textPrimary(for: scheme))
+                                    .frame(width: 72, height: 72)
+                                    .background(theme.surfaceElevated(for: scheme).opacity(0.6))
+                                    .clipShape(Circle())
                             }
-                            .pressableFeedback()
+                            .buttonStyle(.plain)
+                            .opacity(pinInput.isEmpty ? 0.3 : 1.0)
                         } else {
-                            Button(action: {
-                                handleDigitInput(key)
-                            }) {
+                            Button {
+                                HapticManager.shared.touchSelection()
+                                handleKeyInput(key)
+                            } label: {
                                 Text(key)
-                                    .font(.system(size: 26, weight: .medium, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
-                                    .frame(width: 68, height: 68)
-                                    .liquidGlass(config: .chip)
+                                    .font(.system(size: 28, weight: .light, design: .rounded))
+                                    .foregroundStyle(theme.textPrimary(for: scheme))
+                                    .frame(width: 72, height: 72)
+                                    .background(theme.surfaceElevated(for: scheme))
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                                    }
                             }
-                            .pressableFeedback()
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -150,20 +171,20 @@ public struct AppLockScreenView: View {
         }
     }
 
-    // MARK: - Actions
-
-    private func handleDigitInput(_ digit: String) {
+    private func handleKeyInput(_ digit: String) {
         guard pinInput.count < 4 else { return }
-        HapticManager.shared.touchLight()
         pinInput.append(digit)
 
         if pinInput.count == 4 {
-            verifyPIN()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                validatePin()
+            }
         }
     }
 
-    private func verifyPIN() {
-        if KeychainSecurityHelper.shared.verifyPIN(pinInput) {
+    private func validatePin() {
+        let isSuccess = BiometricLockManager.shared.verifyPIN(pinInput)
+        if isSuccess {
             HapticManager.shared.notifySuccess()
             withAnimation(LiquidAnimation.interactiveSpring) {
                 onUnlocked()
@@ -171,9 +192,9 @@ public struct AppLockScreenView: View {
         } else {
             HapticManager.shared.notifyError()
             attemptsCount += 1
-            errorMessage = "PIN incorrecto (\(attemptsCount) intento\(attemptsCount > 1 ? "s" : ""))"
+            errorMessage = Loc.tr("lock_pin_incorrect")
             isShaking = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 self.isShaking = false
                 self.pinInput = ""
             }
@@ -181,13 +202,12 @@ public struct AppLockScreenView: View {
     }
 
     private func triggerBiometrics() {
-        KeychainSecurityHelper.shared.authenticateWithBiometrics { success in
+        isBiometricScanning = true
+        BiometricLockManager.shared.triggerBiometricUnlock { success in
             DispatchQueue.main.async {
+                self.isBiometricScanning = false
                 if success {
-                    HapticManager.shared.notifySuccess()
-                    withAnimation(LiquidAnimation.interactiveSpring) {
-                        self.onUnlocked()
-                    }
+                    self.onUnlocked()
                 }
             }
         }
@@ -206,8 +226,7 @@ public struct ShakeEffect: GeometryEffect {
     }
 
     public func effectValue(size: CGSize) -> ProjectionTransform {
-        ProjectionTransform(CGAffineTransform(translationX:
-            amount * sin(animatableData * .pi * shakesPerUnit),
-            y: 0))
+        let translation = amount * sin(animatableData * .pi * shakesPerUnit)
+        return ProjectionTransform(CGAffineTransform(translationX: translation, y: 0))
     }
 }
