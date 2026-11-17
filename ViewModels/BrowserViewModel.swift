@@ -37,8 +37,13 @@ final class BrowserViewModel: NSObject {
     // Zoom por dominio
     private var domainZoom: [String: Double] = [:]
 
-    @AppStorage("searchEngine") private var searchEngineRaw = "Google"
-    @AppStorage("autoCloseTabsDays") private var autoCloseDays = 0
+    var searchEngineRaw: String {
+        UserDefaults.standard.string(forKey: "searchEngine") ?? "Google"
+    }
+
+    var autoCloseDays: Int {
+        UserDefaults.standard.integer(forKey: "autoCloseTabsDays")
+    }
 
     private var webViews: [UUID: WKWebView] = [:]
     private var contentController: WKUserContentController?

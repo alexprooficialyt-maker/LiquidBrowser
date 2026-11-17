@@ -45,7 +45,7 @@ struct AppColors {
 
 extension Color {
     init?(hex: String) {
-        var h = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        let h = hex.trimmingCharacters(in: .whitespacesAndNewlines)
                    .replacingOccurrences(of: "#", with: "")
         var rgb: UInt64 = 0
         guard Scanner(string: h).scanHexInt64(&rgb) else { return nil }
