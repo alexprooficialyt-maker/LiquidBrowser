@@ -2,55 +2,41 @@ import Foundation
 
 // MARK: - TabModel
 
-public struct TabModel: Identifiable, Codable, Equatable, Sendable {
+public struct TabModel: Identifiable, Codable, Sendable, Hashable {
     public let id: UUID
     public var url: URL?
     public var title: String
-    public var customTitle: String?
-    public var spaceID: UUID
     public var isPinned: Bool
+    public var spaceID: UUID?
+    public var profileID: UUID
     public var isPrivate: Bool
-    public var lastAccessed: Date
-    public var snapshotFileName: String?
-    public var isSecure: Bool
-    public var isDesktopMode: Bool
-    public var forcedDarkMode: Bool
+    public var createdAt: Date
+    public var lastAccessedAt: Date
 
     public init(
         id: UUID = UUID(),
         url: URL? = nil,
         title: String = "Nueva Pestaña",
-        customTitle: String? = nil,
-        spaceID: UUID = UUID(),
         isPinned: Bool = false,
+        spaceID: UUID? = nil,
+        profileID: UUID,
         isPrivate: Bool = false,
-        lastAccessed: Date = Date(),
-        snapshotFileName: String? = nil,
-        isSecure: Bool = false,
-        isDesktopMode: Bool = false,
-        forcedDarkMode: Bool = false
+        createdAt: Date = Date(),
+        lastAccessedAt: Date = Date()
     ) {
         self.id = id
         self.url = url
         self.title = title
-        self.customTitle = customTitle
-        self.spaceID = spaceID
         self.isPinned = isPinned
+        self.spaceID = spaceID
+        self.profileID = profileID
         self.isPrivate = isPrivate
-        self.lastAccessed = lastAccessed
-        self.snapshotFileName = snapshotFileName
-        self.isSecure = isSecure
-        self.isDesktopMode = isDesktopMode
-        self.forcedDarkMode = forcedDarkMode
+        self.createdAt = createdAt
+        self.lastAccessedAt = lastAccessedAt
     }
 
-    // MARK: - Computed Properties
-
     public var displayTitle: String {
-        if let custom = customTitle, !custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return custom
-        }
-        if !title.isEmpty && title != "about:blank" {
+        if !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return title
         }
         if let host = url?.host {
@@ -60,12 +46,10 @@ public struct TabModel: Identifiable, Codable, Equatable, Sendable {
     }
 
     public var displayHost: String {
-        guard let host = url?.host else { return "liquid://inicio" }
-        return host.replacingOccurrences(of: "www.", with: "")
+        url?.host?.replacingOccurrences(of: "www.", with: "") ?? ""
     }
 
-    public var faviconURL: URL? {
-        guard let host = url?.host else { return nil }
-        return URL(string: "https://www.google.com/s2/favicons?domain=\(host)&sz=64")
+    public var isNewTab: Bool {
+        url == nil || url?.absoluteString.isEmpty == true
     }
 }
