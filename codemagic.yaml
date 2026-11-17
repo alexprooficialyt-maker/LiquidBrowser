@@ -13,10 +13,6 @@ workflows:
         XCODE_PROJECT: "LiquidBrowser.xcodeproj"
         XCODE_SCHEME: "LiquidBrowser"
 
-      ios_signing:
-        distribution_type: development
-        bundle_identifier: com.liquidbrowser.app
-
     scripts:
       - name: Setup Tools
         script: |
@@ -27,22 +23,24 @@ workflows:
           cd $CM_BUILD_DIR
           xcodegen generate
 
-      - name: Build and Package IPA
+      - name: Build Unsigned App
         script: |
           xcodebuild \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
             -sdk iphoneos \
             -configuration Release \
-            -archivePath "$CM_BUILD_DIR/build/LiquidBrowser.xcarchive" \
-            archive | xcpretty
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
 
-          xcodebuild \
-            -exportArchive \
-            -archivePath "$CM_BUILD_DIR/build/LiquidBrowser.xcarchive" \
-            -exportPath "$CM_BUILD_DIR/build/ipa" \
-            -exportOptionsPlist ExportOptions.plist | xcpretty
+      - name: Package IPA
+        script: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/LiquidBrowser.app Payload/
+          zip -r LiquidBrowser.ipa Payload
+          rm -rf Payload
 
     artifacts:
-      - build/ipa/*.ipa
-      - build/ipa/*.dSYM.zip
+      - LiquidBrowser.ipa
