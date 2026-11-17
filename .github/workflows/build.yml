@@ -1,0 +1,44 @@
+name: Generar IPA LiquidBrowser
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      - name: Generar proyecto Xcode
+        run: xcodegen generate
+
+      - name: Compilar App
+        run: |
+          xcodebuild \
+            -project LiquidBrowser.xcodeproj \
+            -scheme LiquidBrowser \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Empaquetar como archivo .IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/LiquidBrowser.app Payload/
+          zip -r LiquidBrowser.ipa Payload
+          rm -rf Payload
+
+      - name: Subir IPA descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiquidBrowser-IPA
+          path: LiquidBrowser.ipa

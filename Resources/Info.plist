@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>LiquidBrowser</string>
+  <key>CFBundleDisplayName</key>
+  <string>Liquid Browser</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.liquidbrowser.app</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+  </array>
+
+  <key>UILaunchScreen</key>
+  <dict/>
+
+  <key>NSFaceIDUsageDescription</key>
+  <string>Autenticación biométrica requerida para desbloquear pestañas privadas.</string>
+
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>Permite exportar y guardar capturas completas de sitios web en tu fototeca.</string>
+
+  <key>NSCameraUsageDescription</key>
+  <string>Acceso a la cámara para escaneo de códigos QR.</string>
+
+  <key>UIFileSharingEnabled</key>
+  <true/>
+  <key>LSSupportsOpeningDocumentsInPlace</key>
+  <true/>
+
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    <key>NSAllowsArbitraryLoadsInWebContent</key>
+    <true/>
+  </dict>
+
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>liquidbrowser</string>
+        <string>http</string>
+        <string>https</string>
+      </array>
+    </dict>
+  </array>
+
+  <key>com.apple.security.network.client</key>
+  <true/>
+
+  <key>UIRequiresFullScreen</key>
+  <true/>
+
+  <key>UIApplicationSceneManifest</key>
+  <dict>
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+  </dict>
+</dict>
+</plist>

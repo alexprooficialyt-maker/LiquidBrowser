@@ -1,0 +1,48 @@
+workflows:
+  ios-build:
+    name: LiquidBrowser — Release IPA
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+
+    environment:
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.liquidbrowser.app"
+        APP_NAME: "LiquidBrowser"
+        XCODE_PROJECT: "LiquidBrowser.xcodeproj"
+        XCODE_SCHEME: "LiquidBrowser"
+
+      ios_signing:
+        distribution_type: development
+        bundle_identifier: com.liquidbrowser.app
+
+    scripts:
+      - name: Setup Tools
+        script: |
+          brew install xcodegen
+
+      - name: Generate Xcode Project
+        script: |
+          cd $CM_BUILD_DIR
+          xcodegen generate
+
+      - name: Build and Package IPA
+        script: |
+          xcodebuild \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath "$CM_BUILD_DIR/build/LiquidBrowser.xcarchive" \
+            archive | xcpretty
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$CM_BUILD_DIR/build/LiquidBrowser.xcarchive" \
+            -exportPath "$CM_BUILD_DIR/build/ipa" \
+            -exportOptionsPlist ExportOptions.plist | xcpretty
+
+    artifacts:
+      - build/ipa/*.ipa
+      - build/ipa/*.dSYM.zip
