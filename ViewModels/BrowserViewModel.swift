@@ -24,6 +24,7 @@ final class BrowserViewModel: NSObject {
     var isShowingSettings: Bool    = false
     var isShowingReader:   Bool    = false
     var isBarVisible:      Bool    = true
+    var isPrivateMode:     Bool    = false
     var isPrivateLocked:   Bool    = false
     var tabSearchQuery:    String  = ""
     var blockedTrackers:   Int     = 0

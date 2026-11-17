@@ -38,14 +38,8 @@ struct SettingsIcon: Shape {
 
             let a0 = baseAngle - halfTooth
             let a1 = baseAngle + halfTooth
-            let aM = baseAngle
 
             let outerPad = R * 0.86                     // radio de la raíz del diente
-            let innerPad = R * 0.70
-
-            let pts: [(CGFloat, CGFloat, CGFloat)] = [
-                (R,        a0, 0), (R,        a1, 0),
-            ]
 
             if i == 0 {
                 p.move(to: pt(cx, cy, R, a0))

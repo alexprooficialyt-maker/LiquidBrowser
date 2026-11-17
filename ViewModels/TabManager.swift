@@ -37,7 +37,7 @@ final class TabManager {
     // MARK: - CRUD Pestañas
 
     func newTab(url: URL? = nil, isPrivate: Bool = false) -> UUID {
-        var tab = BrowserTab(url: url, isPrivate: isPrivate)
+        let tab = BrowserTab(url: url, isPrivate: isPrivate)
         tabs.append(tab)
         activeTabID = tab.id
 
