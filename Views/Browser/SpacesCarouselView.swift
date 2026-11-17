@@ -311,11 +311,9 @@ public struct SpacesCarouselView: View {
 
     private func unlockPrivateSpace() {
         KeychainVault.shared.authenticateWithBiometrics(reason: "Desbloquear Espacio Privado") { success in
-            DispatchQueue.main.async {
-                if success {
-                    self.isPrivateUnlocked = true
-                    HapticManager.shared.notifySuccess()
-                }
+            if success {
+                self.isPrivateUnlocked = true
+                HapticManager.shared.notifySuccess()
             }
         }
     }

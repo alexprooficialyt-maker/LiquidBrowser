@@ -3,8 +3,9 @@ import LocalAuthentication
 
 // MARK: - BiometricLockManager (@Observable App Lock & Security State)
 
+@MainActor
 @Observable
-public final class BiometricLockManager: @unchecked Sendable {
+public final class BiometricLockManager {
     public static let shared = BiometricLockManager()
 
     // Estado Reactivo de Bloqueo
@@ -78,7 +79,7 @@ public final class BiometricLockManager: @unchecked Sendable {
 
     // MARK: - Biometric Authentication Execution
 
-    public func triggerBiometricUnlock(completion: ((Bool) -> Void)? = nil) {
+    public func triggerBiometricUnlock(completion: (@MainActor (Bool) -> Void)? = nil) {
         guard KeychainVault.shared.isBiometricAuthEnabled else {
             completion?(false)
             return

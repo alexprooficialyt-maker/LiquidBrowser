@@ -40,7 +40,7 @@ public final class GoogleAuthManager: @unchecked Sendable {
             let googleCookies = cookies.filter { $0.domain.contains("google.") }
             let hasSID = googleCookies.contains { $0.name == "SID" || $0.name == "SSID" }
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.isCheckingSession = false
                 if hasSID {
                     self.accountState.isSignedIn = true

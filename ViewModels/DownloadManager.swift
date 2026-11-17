@@ -102,7 +102,7 @@ public final class DownloadManager: NSObject, @unchecked Sendable, URLSessionDow
         guard let itemID = downloadTasks.first(where: { $0.value == downloadTask })?.key else { return }
         let progress = totalBytesExpectedToWrite > 0 ? Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) : 0.0
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             if let idx = self.downloads.firstIndex(where: { $0.id == itemID }) {
                 self.downloads[idx].receivedBytes = totalBytesWritten
                 self.downloads[idx].totalBytes = totalBytesExpectedToWrite
@@ -118,7 +118,7 @@ public final class DownloadManager: NSObject, @unchecked Sendable, URLSessionDow
     ) {
         guard let itemID = downloadTasks.first(where: { $0.value == downloadTask })?.key else { return }
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             guard let idx = self.downloads.firstIndex(where: { $0.id == itemID }) else { return }
             let suggestedName = self.downloads[idx].suggestedFileName
             let destinationURL = StorageEngine.shared.downloadDestinationURL(suggestedFileName: suggestedName)
@@ -147,7 +147,7 @@ public final class DownloadManager: NSObject, @unchecked Sendable, URLSessionDow
     ) {
         if let error = error as? NSError, error.code != NSURLErrorCancelled {
             guard let itemID = downloadTasks.first(where: { $0.value == task })?.key else { return }
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if let idx = self.downloads.firstIndex(where: { $0.id == itemID }) {
                     self.downloads[idx].state = .failed(reason: error.localizedDescription)
                     self.saveDownloads()

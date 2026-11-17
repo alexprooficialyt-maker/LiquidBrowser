@@ -265,3 +265,20 @@ public final class WebEngineCoordinator: NSObject, WKNavigationDelegate, WKUIDel
         currentIsLoading = false
     }
 }
+
+// MARK: - URLResolver (Smart Omnibar URL & Query Resolution)
+
+public struct URLResolver: Sendable {
+    public static func resolve(input: String) -> URL {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") {
+            if let valid = URL(string: trimmed) { return valid }
+        }
+        if !trimmed.contains(" ") && trimmed.contains(".") && !trimmed.hasSuffix(".") {
+            if let valid = URL(string: "https://\(trimmed)") { return valid }
+        }
+        let engineRaw = UserDefaults.standard.string(forKey: "smartbot_default_search_engine") ?? SearchEngineType.google.rawValue
+        let engine = SearchEngineType(rawValue: engineRaw) ?? .google
+        return engine.buildSearchURL(query: trimmed) ?? URL(string: "https://www.google.com")!
+    }
+}

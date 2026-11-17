@@ -133,12 +133,14 @@ public final class KeychainVault: @unchecked Sendable {
         var error: NSError?
 
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
-            DispatchQueue.main.async { completion(false) }
+            Task { @MainActor in
+                completion(false)
+            }
             return
         }
 
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, _ in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 completion(success)
             }
         }

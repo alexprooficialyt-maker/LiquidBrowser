@@ -5,7 +5,7 @@ import LocalAuthentication
 
 public struct AppLockScreenView: View {
     @Environment(\.colorScheme) private var systemColorScheme
-    public var onUnlocked: () -> Void
+    public var onUnlocked: @MainActor () -> Void
 
     @State private var pinInput: String = ""
     @State private var attemptsCount: Int = 0
@@ -13,7 +13,7 @@ public struct AppLockScreenView: View {
     @State private var errorMessage: String? = nil
     @State private var isBiometricScanning: Bool = false
 
-    public init(onUnlocked: @escaping () -> Void = {}) {
+    public init(onUnlocked: @escaping @MainActor () -> Void = {}) {
         self.onUnlocked = onUnlocked
     }
 
@@ -204,11 +204,9 @@ public struct AppLockScreenView: View {
     private func triggerBiometrics() {
         isBiometricScanning = true
         BiometricLockManager.shared.triggerBiometricUnlock { success in
-            DispatchQueue.main.async {
-                self.isBiometricScanning = false
-                if success {
-                    self.onUnlocked()
-                }
+            self.isBiometricScanning = false
+            if success {
+                self.onUnlocked()
             }
         }
     }

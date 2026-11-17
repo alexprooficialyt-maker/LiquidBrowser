@@ -386,6 +386,7 @@ public final class StorageEngine: @unchecked Sendable {
 
     // MARK: - Factory Reset (Restablecer de Fábrica Todo)
 
+    @MainActor
     public func factoryResetAllData() {
         // 1. Limpiar Keychain
         KeychainVault.shared.wipeAllSecureData()

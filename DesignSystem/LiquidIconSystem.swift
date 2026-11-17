@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - LiquidIconType Enum (48 Handcrafted Vector Icons)
 
-public enum LiquidIconType: String, CaseIterable, Sendable {
+public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     // 1. Navegación Safari
     case back
     case forward
