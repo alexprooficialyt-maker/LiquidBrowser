@@ -1,108 +1,227 @@
 import SwiftUI
 
-// MARK: - SettingsView
+// MARK: - SettingsView (Strict Monochrome Liquid Glass)
 
-struct SettingsView: View {
-    @AppStorage("userName")          private var userName       = ""
-    @AppStorage("userAge")           private var userAge        = 0
-    @AppStorage("searchEngine")      private var searchEngine   = "Google"
-    @AppStorage("accentColorHex")    private var accentColorHex = "#4A90E2"
-    @AppStorage("autoCloseTabsDays") private var autoCloseDays  = 0
-    @AppStorage("barPosition")       private var barPosition    = "Abajo"
+public struct SettingsView: View {
+    @AppStorage("userName") private var userName = ""
+    @AppStorage("userAge") private var userAge = 24
+    @AppStorage("searchEngine") private var searchEngine = "Google"
+    @AppStorage("monochromeTone") private var monochromeTone = "Titanium"
+    @AppStorage("autoCloseTabsDays") private var autoCloseDays = 0
+    @AppStorage("adBlockEnabled") private var adBlockEnabled = true
+    @AppStorage("forceHTTPS") private var forceHTTPS = true
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
-    private let engines    = ["Google", "DuckDuckGo", "Brave", "Ecosia"]
-    private let closeDays  = [0, 1, 7, 30]
-    private let barPositions = ["Abajo", "Arriba"]
-    private let accentColors = ["#4A90E2", "#FF3B30", "#34C759", "#FF9500", "#AF52DE", "#FF2D55"]
+    @State private var showingBurnConfirmation = false
 
-    var body: some View {
+    private let searchEngines = ["Google", "DuckDuckGo", "Brave", "Ecosia"]
+    private let toneOptions = [
+        ("Titanio", "Titanium"),
+        ("Grafito", "Graphite"),
+        ("Plata", "Silver")
+    ]
+
+    public init() {}
+
+    public var body: some View {
+        let theme = ThemeEngine.shared
+
         NavigationView {
-            Form {
-                // Perfil
-                Section("Perfil") {
-                    HStack {
-                        Text("Nombre")
-                        Spacer()
-                        TextField("Tu nombre", text: $userName)
-                            .multilineTextAlignment(.trailing)
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Text("Edad")
-                        Spacer()
-                        Stepper("\(userAge) años", value: $userAge, in: 10...99)
-                    }
-                }
+            ZStack {
+                theme.background(for: colorScheme)
+                    .ignoresSafeArea()
 
-                // Búsqueda
-                Section("Motor de búsqueda") {
-                    Picker("Motor", selection: $searchEngine) {
-                        ForEach(engines, id: \.self) { Text($0).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                }
+                Form {
+                    // SECCIÓN: PERFIL
+                    Section {
+                        HStack {
+                            Text("Nombre")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            Spacer()
+                            TextField("Tu nombre", text: $userName)
+                                .multilineTextAlignment(.trailing)
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textSecondary(for: colorScheme))
+                        }
 
-                // Interfaz
-                Section("Interfaz") {
-                    Picker("Posición de la barra", selection: $barPosition) {
-                        ForEach(barPositions, id: \.self) { Text($0).tag($0) }
+                        HStack {
+                            Text("Edad")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            Spacer()
+                            Stepper("\(userAge) años", value: $userAge, in: 10...99)
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textSecondary(for: colorScheme))
+                        }
+                    } header: {
+                        Text("Perfil")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Color de acento")
-                            .font(.system(size: 15, design: .rounded))
-                        HStack(spacing: 12) {
-                            ForEach(accentColors, id: \.self) { hex in
-                                Circle()
-                                    .fill(Color(hex: hex) ?? .blue)
-                                    .frame(width: 32, height: 32)
-                                    .overlay(
-                                        Circle().stroke(.white, lineWidth: accentColorHex == hex ? 3 : 0)
-                                    )
-                                    .shadow(color: (Color(hex: hex) ?? .blue).opacity(0.4), radius: 4)
-                                    .onTapGesture { accentColorHex = hex }
+                    // SECCIÓN: BÚSQUEDA
+                    Section {
+                        Picker("Motor de búsqueda", selection: $searchEngine) {
+                            ForEach(searchEngines, id: \.self) { engine in
+                                Text(engine).tag(engine)
                             }
                         }
+                        .pickerStyle(.menu)
+                        .tint(theme.textPrimary(for: colorScheme))
+                    } header: {
+                        Text("Navegación")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
-                    .padding(.vertical, 4)
-                }
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
 
-                // Privacidad
-                Section("Privacidad") {
-                    Picker("Cerrar pestañas inactivas", selection: $autoCloseDays) {
-                        Text("Nunca").tag(0)
-                        Text("Tras 24h").tag(1)
-                        Text("Tras 7 días").tag(7)
-                        Text("Tras 30 días").tag(30)
-                    }
-                }
+                    // SECCIÓN: ESTILO MONOCROMO & MATERIAL
+                    Section {
+                        Picker("Matiz Monocromo", selection: $monochromeTone) {
+                            ForEach(toneOptions, id: \.1) { name, key in
+                                Text(name).tag(key)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(theme.textPrimary(for: colorScheme))
 
-                // Info
-                Section("Acerca de") {
-                    HStack {
-                        Text("Versión")
-                        Spacer()
-                        Text("1.0.0 (Fase 2)").foregroundStyle(.secondary)
+                        HStack {
+                            Text("Material de interfaz")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            Spacer()
+                            Text("Liquid Glass")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundStyle(theme.textSecondary(for: colorScheme))
+                        }
+                    } header: {
+                        Text("Diseño y Acabado")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
-                    HStack {
-                        Text("Motor")
-                        Spacer()
-                        Text("WebKit").foregroundStyle(.secondary)
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
+
+                    // SECCIÓN: PRIVACIDAD Y SEGURIDAD
+                    Section {
+                        Toggle(isOn: $adBlockEnabled) {
+                            HStack(spacing: 12) {
+                                LiquidIconView(.shieldBlocker, size: 16, color: theme.textPrimary(for: colorScheme))
+                                Text("Bloquear rastreadores y publicidad")
+                                    .font(.system(size: 15, design: .rounded))
+                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            }
+                        }
+                        .tint(theme.textPrimary(for: colorScheme))
+
+                        Toggle(isOn: $forceHTTPS) {
+                            HStack(spacing: 12) {
+                                LiquidIconView(.lockSSL, size: 16, color: theme.textPrimary(for: colorScheme))
+                                Text("Forzar HTTPS seguro")
+                                    .font(.system(size: 15, design: .rounded))
+                                    .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            }
+                        }
+                        .tint(theme.textPrimary(for: colorScheme))
+
+                        Button(role: .destructive) {
+                            HapticManager.shared.touchMedium()
+                            showingBurnConfirmation = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                LiquidIconView(.burnSession, size: 16, color: Color.red)
+                                Text("Quemar sesión y borrar datos")
+                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .foregroundStyle(Color.red)
+                            }
+                        }
+                    } header: {
+                        Text("Privacidad")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
+                    } footer: {
+                        Text("Quemar sesión borra cookies, caché web, historial y pestañas abiertas inmediatamente.")
+                            .font(.system(size: 12, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
-                    HStack {
-                        Text("IA integrada")
-                        Spacer()
-                        Text("Ninguna ✓").foregroundStyle(AppColors.secure)
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
+
+                    // SECCIÓN: PESTAÑAS
+                    Section {
+                        Picker("Cierre automático de inactivas", selection: $autoCloseDays) {
+                            Text("Nunca").tag(0)
+                            Text("Tras 24 horas").tag(1)
+                            Text("Tras 7 días").tag(7)
+                            Text("Tras 30 días").tag(30)
+                        }
+                        .pickerStyle(.menu)
+                        .tint(theme.textPrimary(for: colorScheme))
+                    } header: {
+                        Text("Gestión de Pestañas")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
                     }
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
+
+                    // SECCIÓN: ACERCA DE
+                    Section {
+                        HStack {
+                            Text("Versión")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            Spacer()
+                            Text("1.0.0 (Liquid Glass Native)")
+                                .font(.system(size: 14, design: .rounded))
+                                .foregroundStyle(theme.textSecondary(for: colorScheme))
+                        }
+
+                        HStack {
+                            Text("Motor Web")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundStyle(theme.textPrimary(for: colorScheme))
+                            Spacer()
+                            Text("WebKit Multi-Instancia")
+                                .font(.system(size: 14, design: .rounded))
+                                .foregroundStyle(theme.textSecondary(for: colorScheme))
+                        }
+                    } header: {
+                        Text("Acerca de LiquidBrowser")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(theme.textSecondary(for: colorScheme))
+                    }
+                    .listRowBackground(theme.cardBackground(for: colorScheme))
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Ajustes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Hecho") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") {
+                        HapticManager.shared.touchLight()
+                        dismiss()
+                    }
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(theme.textPrimary(for: colorScheme))
+                }
+            }
+            .alert("¿Quemar sesión?", isPresented: $showingBurnConfirmation) {
+                Button("Cancelar", role: .cancel) {}
+                Button("Quemar y Limpiar", role: .destructive) {
+                    burnSession()
+                }
+            } message: {
+                Text("Se cerrarán todas las pestañas, se borrarán las cookies temporales, la caché y el historial.")
             }
         }
+    }
+
+    private func burnSession() {
+        HapticManager.shared.notifyWarning()
+        WebEngineCoordinator.shared.burnSession()
+        dismiss()
     }
 }

@@ -33,7 +33,9 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Resources/LiquidBrowser.entitlements
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_ALLOWED: NO
     info:
       path: Resources/Info.plist
       properties:
