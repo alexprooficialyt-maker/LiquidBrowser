@@ -148,7 +148,7 @@ public struct SpacesCarouselView: View {
 
                         if spaces.count > 1 {
                             Button(role: .destructive) {
-                                HapticManager.shared.touchWarning()
+                                HapticManager.shared.notifyWarning()
                                 storage.deleteSpace(id: space.id)
                                 if selectedSpaceID == space.id {
                                     selectedSpaceID = spaces.first?.id

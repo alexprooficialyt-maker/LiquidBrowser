@@ -72,7 +72,7 @@ public struct DeviceHardwareDetector: Sendable {
 
 @MainActor
 public final class DeviceBiometryHelper: Sendable {
-    nonisolated(unsafe) public static let shared = DeviceBiometryHelper()
+    public static let shared = DeviceBiometryHelper()
 
     private init() {}
 

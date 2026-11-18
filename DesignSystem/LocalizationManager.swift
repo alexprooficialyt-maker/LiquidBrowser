@@ -147,7 +147,6 @@ public final class LocalizationManager: @unchecked Sendable {
         let aliases: [String: String] = [
             "search_placeholder": "bar_search_placeholder",
             "home_no_searches": "home_empty_searches",
-            "onboarding_step2_sub": "onboarding_step2_subtitle",
             "space_new": "spaces_new_folder",
             "settings_security": "settings_security_pin",
             "settings_passwords": "tools_password_vault",

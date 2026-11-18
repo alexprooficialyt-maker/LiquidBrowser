@@ -338,7 +338,6 @@ private struct SouthKoreaFlag: View {
             let barLen: CGFloat  = r * 0.75
             let barThick: CGFloat = max(1.5, h * 0.025)
             let barGap: CGFloat  = barThick * 1.6
-            let margin: CGFloat  = w * 0.06
 
             // Helper to draw 3 trigram bars at a given center, rotated
             func drawTrigram(cx: CGFloat, cy: CGFloat, angle: CGFloat) {

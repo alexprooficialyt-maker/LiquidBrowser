@@ -64,7 +64,15 @@ public final class HapticManager: Sendable {
         notificationGenerator.notificationOccurred(.warning)
     }
 
+    public func touchWarning() {
+        notifyWarning()
+    }
+
     public func notifyError() {
         notificationGenerator.notificationOccurred(.error)
+    }
+
+    public func touchError() {
+        notifyError()
     }
 }
