@@ -61,6 +61,10 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Codable, Sendable {
         }
     }
 
+    public var localizedName: String {
+        nativeRegion
+    }
+
     public var flagEmoji: String {
         switch self {
         case .spanish:    return "🇪🇸"

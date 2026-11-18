@@ -82,6 +82,9 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case userProfile
     case briefcase
     case graduationCap
+    case star
+    case sparkler
+    case eye
 }
 
 // MARK: - Handcrafted Bézier Shapes Implementation
@@ -369,7 +372,7 @@ public struct LiquidIconShape: Shape {
             p = LiquidIconShape(.spaceFolder).path(in: rect)
             p.addEllipse(in: CGRect(x: w * 0.46, y: h * 0.54, width: w * 0.08, height: h * 0.08))
 
-        case .spaceStar:
+        case .spaceStar, .star:
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.18))
             p.addLine(to: CGPoint(x: w * 0.59, y: h * 0.36))
             p.addLine(to: CGPoint(x: w * 0.79, y: h * 0.39))
@@ -381,6 +384,21 @@ public struct LiquidIconShape: Shape {
             p.addLine(to: CGPoint(x: w * 0.21, y: h * 0.39))
             p.addLine(to: CGPoint(x: w * 0.41, y: h * 0.36))
             p.closeSubpath()
+
+        case .sparkler:
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.18))
+            p.addQuadCurve(to: CGPoint(x: w * 0.82, y: h * 0.50), control: CGPoint(x: w * 0.55, y: h * 0.45))
+            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.82), control: CGPoint(x: w * 0.55, y: h * 0.55))
+            p.addQuadCurve(to: CGPoint(x: w * 0.18, y: h * 0.50), control: CGPoint(x: w * 0.45, y: h * 0.55))
+            p.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.18), control: CGPoint(x: w * 0.45, y: h * 0.45))
+            p.closeSubpath()
+
+        case .eye:
+            p.move(to: CGPoint(x: w * 0.16, y: h * 0.50))
+            p.addQuadCurve(to: CGPoint(x: w * 0.84, y: h * 0.50), control: CGPoint(x: w * 0.50, y: h * 0.22))
+            p.addQuadCurve(to: CGPoint(x: w * 0.16, y: h * 0.50), control: CGPoint(x: w * 0.50, y: h * 0.78))
+            p.closeSubpath()
+            p.addEllipse(in: CGRect(x: w * 0.40, y: h * 0.40, width: w * 0.20, height: h * 0.20))
 
         case .pin:
             p.move(to: CGPoint(x: w * 0.35, y: h * 0.22))

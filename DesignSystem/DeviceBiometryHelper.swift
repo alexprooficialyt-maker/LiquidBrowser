@@ -148,6 +148,15 @@ public final class DeviceBiometryHelper: Sendable {
 
     // MARK: - Real Hardware Authentication Execution
 
+    @MainActor
+    public func authenticate(reason: String = "Desbloquear SmartBot Browser") async -> Bool {
+        await withCheckedContinuation { continuation in
+            authenticate(reason: reason) { success in
+                continuation.resume(returning: success)
+            }
+        }
+    }
+
     public func authenticate(
         reason: String = "Desbloquear SmartBot Browser",
         completion: @escaping @MainActor (Bool) -> Void
