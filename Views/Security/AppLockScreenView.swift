@@ -98,7 +98,9 @@ public struct AppLockScreenView: View {
         }
         .onAppear {
             if hasBio {
-                triggerBiometrics()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    triggerBiometrics()
+                }
             }
         }
     }

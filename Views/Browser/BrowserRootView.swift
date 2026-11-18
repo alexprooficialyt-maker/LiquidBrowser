@@ -50,7 +50,6 @@ public struct BrowserRootView: View {
                 if let tab = activeTab, !tab.isNewTab {
                     // CONTENEDOR 100% LIBRE DE OVERLAYS - TOQUES DIRECTOS AL WKWEBVIEW
                     activeWebContainer(for: tab)
-                        .ignoresSafeArea(.container, edges: .top)
                 } else {
                     SmartHomeDashboardView(
                         onSelectQuery: { query in
