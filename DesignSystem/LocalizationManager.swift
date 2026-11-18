@@ -1527,7 +1527,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "onboarding_welcome_title": "SmartBot Browser",
             "onboarding_welcome_subtitle": "流动通透的水晶液态玻璃安全浏览体验。",
             "onboarding_step1_title": "选择你的语言",
-            "onboarding_step1_subtitle": "可随时在"设置"中更改。",
+            "onboarding_step1_subtitle": "可随时在“设置”中更改。",
             "onboarding_search_language": "搜索语言...",
             "onboarding_step2_title": "个人资料",
             "onboarding_step2_subtitle": "定制专属您的网页浏览空间。",
