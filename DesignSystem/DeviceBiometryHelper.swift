@@ -72,7 +72,7 @@ public struct DeviceHardwareDetector: Sendable {
 
 @MainActor
 public final class DeviceBiometryHelper: Sendable {
-    public static let shared = DeviceBiometryHelper()
+    nonisolated(unsafe) public static let shared = DeviceBiometryHelper()
 
     private init() {}
 
@@ -155,6 +155,17 @@ public final class DeviceBiometryHelper: Sendable {
                 continuation.resume(returning: success)
             }
         }
+    }
+
+    // MARK: - Enable Biometrics Helper
+
+    @MainActor
+    public func tryEnableBiometrics() async -> (success: Bool, errorMessage: String?) {
+        guard isBiometricsAvailable else {
+            return (false, "Este dispositivo no es compatible con biometría.")
+        }
+        let result = await authenticate(reason: "Verificar identidad para activar Face ID / Touch ID")
+        return (result, result ? nil : "No se pudo verificar la identidad. Inténtalo de nuevo.")
     }
 
     public func authenticate(

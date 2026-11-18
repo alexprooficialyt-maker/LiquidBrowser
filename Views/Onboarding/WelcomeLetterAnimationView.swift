@@ -125,6 +125,9 @@ public struct WelcomeLetterAnimationView: View {
     }
 }
 
+// MARK: - Compatibility Alias
+public typealias WelcomeTransitionView = WelcomeLetterAnimationView
+
 // MARK: - FlowLayout Helper para Wrap Natural de Caracteres
 
 private struct FlowLayout: Layout {

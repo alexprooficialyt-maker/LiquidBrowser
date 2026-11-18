@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Supported App Languages (15 Languages)
 
@@ -65,62 +66,15 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Codable, Sendable {
         nativeRegion
     }
 
-    public var flagEmoji: String {
-        switch self {
-        case .spanish:    return "🇪🇸"
-        case .english:    return "🇺🇸"
-        case .french:     return "🇫🇷"
-        case .german:     return "🇩🇪"
-        case .italian:    return "🇮🇹"
-        case .portuguese: return "🇵🇹"
-        case .catalan:    return "🇦🇩"
-        case .japanese:   return "🇯🇵"
-        case .korean:     return "🇰🇷"
-        case .chinese:    return "🇨🇳"
-        case .arabic:     return "🇸🇦"
-        case .russian:    return "🇷🇺"
-        case .dutch:      return "🇳🇱"
-        case .polish:     return "🇵🇱"
-        case .turkish:    return "🇹🇷"
-        }
-    }
+    // flagEmoji is now empty — real flags come from VectorFlagSystem
+    public var flagEmoji: String { "" }
 
     public var isRTL: Bool {
         self == .arabic
     }
 }
 
-// MARK: - LanguageFlagView (Rounded Flag with 0.5pt Specular Border)
-
-public struct LanguageFlagView: View {
-    public let language: AppLanguage
-    public var size: CGFloat = 28
-
-    @Environment(\.colorScheme) private var colorScheme
-
-    public init(language: AppLanguage, size: CGFloat = 28) {
-        self.language = language
-        self.size = size
-    }
-
-    public var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(colorScheme == .dark ? Color.white.opacity(0.10) : Color.black.opacity(0.05))
-                .frame(width: size * 1.35, height: size)
-
-            Text(language.flagEmoji)
-                .font(.system(size: size * 0.72))
-
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .strokeBorder(
-                    colorScheme == .dark ? Color.white.opacity(0.20) : Color.black.opacity(0.12),
-                    lineWidth: 0.5
-                )
-                .frame(width: size * 1.35, height: size)
-        }
-    }
-}
+// MARK: - Note: VectorFlagView & LanguageFlagView are defined in VectorFlagSystem.swift
 
 // MARK: - LocalizationManager (@Observable Single Source of Truth)
 
@@ -189,16 +143,53 @@ public final class LocalizationManager: @unchecked Sendable {
     // MARK: - String Dictionary Translation Engine
 
     public func localized(_ key: String) -> String {
-        if let table = localizedStrings[currentLanguage], let val = table[key] {
+        // Robust key resolution aliases to prevent raw internal keys on screen
+        let aliases: [String: String] = [
+            "search_placeholder": "bar_search_placeholder",
+            "home_no_searches": "home_empty_searches",
+            "onboarding_step2_sub": "onboarding_step2_subtitle",
+            "space_new": "spaces_new_folder",
+            "settings_security": "settings_security_pin",
+            "settings_passwords": "tools_password_vault",
+            "settings_antispy": "tools_anti_spy",
+            "home_saved_sites_title": "home_saved_sites",
+            "home_recent_searches_title": "home_recent_searches",
+            "home_add_site_button": "home_add_site",
+            "spaces_new_tab": "bar_new_tab",
+            "space_edit": "spaces_edit_folder",
+            "space_delete": "spaces_delete_folder",
+            "onboarding_step1_sub": "onboarding_step1_subtitle",
+            "onboarding_step2_sub": "onboarding_step2_subtitle",
+            "onboarding_step3_sub": "onboarding_step3_subtitle",
+            "onboarding_step4_sub": "onboarding_step4_subtitle",
+            "onboarding_step5_sub": "onboarding_step5_subtitle",
+            "onboarding_step2_name_label": "onboarding_name_placeholder",
+            "onboarding_step2_name_placeholder": "onboarding_name_placeholder",
+            "onboarding_step2_color_label": "onboarding_color_title",
+            "onboarding_security_skip": "cancel",
+            "start": "onboarding_start_button",
+            "welcome_title": "welcome_hello",
+            "app_tagline": "onboarding_welcome_subtitle",
+            "profile_default_badge": "app_name",
+            "profile_custom_badge": "profile_title"
+        ]
+        let resolvedKey = aliases[key] ?? key
+
+        // 1) Current language
+        if let table = localizedStrings[currentLanguage], let val = table[resolvedKey] {
             return val
         }
-        if let fallback = localizedStrings[.spanish]?[key] {
+        // 2) Spanish fallback
+        if let fallback = localizedStrings[.spanish]?[resolvedKey] {
             return fallback
         }
-        if let englishFallback = localizedStrings[.english]?[key] {
+        // 3) English fallback
+        if let englishFallback = localizedStrings[.english]?[resolvedKey] {
             return englishFallback
         }
-        return key
+        // 4) Human-readable transform of the key (never return raw key with underscores)
+        let cleaned = resolvedKey.replacingOccurrences(of: "_", with: " ")
+        return cleaned.prefix(1).uppercased() + String(cleaned.dropFirst())
     }
 
     public func format(_ key: String, _ args: CVarArg...) -> String {
@@ -282,7 +273,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_authenticated": "Desbloqueado con éxito",
 
             // Safari Bottom Bar
-            "bar_search_placeholder": "Buscar o escribir URL...",
+            "bar_search_placeholder": "Buscar o escribir sitio web",
             "bar_tools": "Herramientas",
             "bar_spaces": "Espacios",
             "bar_new_tab": "Nueva pestaña",
@@ -441,7 +432,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_unlock_button": "Unlock",
             "lock_authenticated": "Successfully unlocked",
 
-            "bar_search_placeholder": "Search or enter URL...",
+            "bar_search_placeholder": "Search or enter website",
             "bar_tools": "Tools",
             "bar_spaces": "Spaces",
             "bar_new_tab": "New Tab",
@@ -590,7 +581,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Utiliser le code PIN",
             "lock_unlock_button": "Déverrouiller",
             "lock_authenticated": "Déverrouillé avec succès",
-            "bar_search_placeholder": "Rechercher ou saisir l'adresse...",
+            "bar_search_placeholder": "Rechercher ou saisir un site web",
             "bar_tools": "Outils",
             "bar_spaces": "Espaces",
             "bar_new_tab": "Nouvel onglet",
@@ -732,7 +723,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "PIN verwenden",
             "lock_unlock_button": "Entsperren",
             "lock_authenticated": "Erfolgreich entsperrt",
-            "bar_search_placeholder": "Suchen oder URL eingeben...",
+            "bar_search_placeholder": "Suchen oder Website eingeben",
             "bar_tools": "Werkzeuge",
             "bar_spaces": "Bereiche",
             "bar_new_tab": "Neuer Tab",
@@ -874,7 +865,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Usa PIN",
             "lock_unlock_button": "Sblocca",
             "lock_authenticated": "Sbloccato con successo",
-            "bar_search_placeholder": "Cerca o inserisci URL...",
+            "bar_search_placeholder": "Cerca o inserisci un sito web",
             "bar_tools": "Strumenti",
             "bar_spaces": "Spazi",
             "bar_new_tab": "Nuovo pannello",
@@ -1016,7 +1007,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Usar PIN",
             "lock_unlock_button": "Desbloquear",
             "lock_authenticated": "Desbloqueado com sucesso",
-            "bar_search_placeholder": "Buscar ou digitar URL...",
+            "bar_search_placeholder": "Buscar ou digitar site",
             "bar_tools": "Ferramentas",
             "bar_spaces": "Espaços",
             "bar_new_tab": "Nova aba",
@@ -1158,7 +1149,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Usa PIN",
             "lock_unlock_button": "Desbloquejar",
             "lock_authenticated": "Desbloquejat amb èxit",
-            "bar_search_placeholder": "Cercar o escriure URL...",
+            "bar_search_placeholder": "Cercar o escriure lloc web",
             "bar_tools": "Eines",
             "bar_spaces": "Espais",
             "bar_new_tab": "Nova pestanya",
@@ -1300,7 +1291,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "PINを使用",
             "lock_unlock_button": "ロック解除",
             "lock_authenticated": "正常にロック解除されました",
-            "bar_search_placeholder": "検索またはURLを入力...",
+            "bar_search_placeholder": "検索またはウェブサイトを入力",
             "bar_tools": "ツール",
             "bar_spaces": "スペース",
             "bar_new_tab": "新規タブ",
@@ -1442,7 +1433,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "PIN 사용",
             "lock_unlock_button": "잠금 해제",
             "lock_authenticated": "성공적으로 해제됨",
-            "bar_search_placeholder": "검색 또는 URL 입력...",
+            "bar_search_placeholder": "검색 또는 웹사이트 입력",
             "bar_tools": "도구",
             "bar_spaces": "스페이스",
             "bar_new_tab": "새 탭",
@@ -1536,7 +1527,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "onboarding_welcome_title": "SmartBot Browser",
             "onboarding_welcome_subtitle": "流动通透的水晶液态玻璃安全浏览体验。",
             "onboarding_step1_title": "选择你的语言",
-            "onboarding_step1_subtitle": "可随时在“设置”中更改。",
+            "onboarding_step1_subtitle": "可随时在"设置"中更改。",
             "onboarding_search_language": "搜索语言...",
             "onboarding_step2_title": "个人资料",
             "onboarding_step2_subtitle": "定制专属您的网页浏览空间。",
@@ -1584,7 +1575,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "使用 PIN 码",
             "lock_unlock_button": "立即解锁",
             "lock_authenticated": "解锁成功",
-            "bar_search_placeholder": "搜索或输入网址...",
+            "bar_search_placeholder": "搜索或输入网址",
             "bar_tools": "工具箱",
             "bar_spaces": "空间",
             "bar_new_tab": "新建标签页",
@@ -1726,7 +1717,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "استخدام PIN",
             "lock_unlock_button": "فتح القفل",
             "lock_authenticated": "تم فتح القفل بنجاح",
-            "bar_search_placeholder": "ابحث أو اكتب عنوان URL...",
+            "bar_search_placeholder": "ابحث أو أدخل موقعًا",
             "bar_tools": "الأدوات",
             "bar_spaces": "المساحات",
             "bar_new_tab": "علامة تبويب جديدة",
@@ -1868,7 +1859,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Использовать PIN-код",
             "lock_unlock_button": "Разблокировать",
             "lock_authenticated": "Успешно разблокировано",
-            "bar_search_placeholder": "Поиск или адрес сайта...",
+            "bar_search_placeholder": "Поиск или адрес сайта",
             "bar_tools": "Инструменты",
             "bar_spaces": "Пространства",
             "bar_new_tab": "Новая вкладка",
@@ -2010,7 +2001,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Gebruik PIN",
             "lock_unlock_button": "Ontgrendelen",
             "lock_authenticated": "Succesvol ontgrendeld",
-            "bar_search_placeholder": "Zoek of typ URL...",
+            "bar_search_placeholder": "Zoek of voer website in",
             "bar_tools": "Gereedschappen",
             "bar_spaces": "Ruimtes",
             "bar_new_tab": "Nieuw tabblad",
@@ -2152,7 +2143,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "Użyj PIN-u",
             "lock_unlock_button": "Odblokuj",
             "lock_authenticated": "Odblokowano pomyślnie",
-            "bar_search_placeholder": "Szukaj lub wpisz URL...",
+            "bar_search_placeholder": "Szukaj lub wpisz stronę",
             "bar_tools": "Narzędzia",
             "bar_spaces": "Przestrzenie",
             "bar_new_tab": "Nowa karta",
@@ -2294,7 +2285,7 @@ public final class LocalizationManager: @unchecked Sendable {
             "lock_use_pin": "PIN kullan",
             "lock_unlock_button": "Kilidi Aç",
             "lock_authenticated": "Başarıyla açıldı",
-            "bar_search_placeholder": "Arayın veya URL yazın...",
+            "bar_search_placeholder": "Ara veya web sitesi gir",
             "bar_tools": "Araçlar",
             "bar_spaces": "Alanlar",
             "bar_new_tab": "Yeni sekme",
@@ -2382,5 +2373,14 @@ public enum Loc {
     public static func format(_ key: String, _ args: CVarArg...) -> String {
         let fmt = LocalizationManager.shared.localized(key)
         return String(format: fmt, arguments: args)
+    }
+}
+
+// MARK: - KeyboardDismissHelper
+
+public enum KeyboardDismissHelper {
+    @MainActor
+    public static func dismiss() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }

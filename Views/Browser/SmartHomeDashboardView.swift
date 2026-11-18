@@ -76,6 +76,7 @@ public struct SmartHomeDashboardView: View {
                 // Selector de Perfil Activo
                 Button {
                     HapticManager.shared.touchLight()
+                    KeyboardDismissHelper.dismiss()
                     onOpenProfileSwitcher()
                 } label: {
                     HStack(spacing: 8) {
@@ -104,6 +105,7 @@ public struct SmartHomeDashboardView: View {
                 // Botón Superior Derecho de Ajustes (Engranaje)
                 Button {
                     HapticManager.shared.touchLight()
+                    KeyboardDismissHelper.dismiss()
                     onOpenSettings()
                 } label: {
                     ZStack {
@@ -165,6 +167,7 @@ public struct SmartHomeDashboardView: View {
                     ForEach(searches) { record in
                         Button {
                             HapticManager.shared.touchLight()
+                            KeyboardDismissHelper.dismiss()
                             onSelectQuery(record.query)
                         } label: {
                             HStack(spacing: 12) {
@@ -209,11 +212,12 @@ public struct SmartHomeDashboardView: View {
 
                 Button {
                     HapticManager.shared.touchLight()
+                    KeyboardDismissHelper.dismiss()
                     isAddingSite = true
                 } label: {
                     HStack(spacing: 4) {
                         LiquidIconView(.newTab, size: 12, color: theme.textPrimary(for: scheme))
-                        Text("Añadir")
+                        Text(Loc.tr("home_add_site"))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(theme.textPrimary(for: scheme))
                     }
@@ -225,6 +229,7 @@ public struct SmartHomeDashboardView: View {
                 ForEach(sites) { site in
                     Button {
                         HapticManager.shared.touchLight()
+                        KeyboardDismissHelper.dismiss()
                         onSelectURL(site.url)
                     } label: {
                         VStack(spacing: 8) {

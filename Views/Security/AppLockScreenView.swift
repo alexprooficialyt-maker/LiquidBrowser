@@ -31,21 +31,29 @@ public struct AppLockScreenView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                // Icono Central de Bloqueo / Biometría
-                ZStack {
-                    Circle()
-                        .fill(theme.glassMaterialFill(for: scheme))
-                        .frame(width: 88, height: 88)
-                        .overlay {
-                            Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
-                        }
-
+                // Icono Central de Bloqueo / Biometría Tappable
+                Button {
                     if hasBio {
-                        AnimatedBiometricIcon(type: bioType, isScanning: isBiometricScanning, size: 44)
-                    } else {
-                        LiquidIconView(.lockSSL, size: 40, color: theme.textPrimary(for: scheme))
+                        HapticManager.shared.touchLight()
+                        triggerBiometrics()
+                    }
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(theme.glassMaterialFill(for: scheme))
+                            .frame(width: 88, height: 88)
+                            .overlay {
+                                Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                            }
+
+                        if hasBio {
+                            AnimatedBiometricIcon(type: bioType, isScanning: isBiometricScanning, size: 44)
+                        } else {
+                            LiquidIconView(.lockSSL, size: 40, color: theme.textPrimary(for: scheme))
+                        }
                     }
                 }
+                .buttonStyle(.plain)
                 .padding(.bottom, 8)
 
                 // Títulos Informativos

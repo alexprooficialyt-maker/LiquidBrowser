@@ -59,7 +59,7 @@ public final class GoogleAuthManager: @unchecked Sendable {
     // MARK: - Sign In & Sign Out
 
     public var googleSignInURL: URL {
-        URL(string: "https://accounts.google.com/ServiceLogin?hl=es")!
+        URL(string: "https://accounts.google.com/ServiceLogin?hl=es") ?? URL(fileURLWithPath: "/")
     }
 
     public func markSignedIn(email: String?, displayName: String?, avatarURL: URL? = nil) {
@@ -92,3 +92,6 @@ public final class GoogleAuthManager: @unchecked Sendable {
         }
     }
 }
+
+// MARK: - Compatibility Alias
+public typealias GoogleAccountAuthManager = GoogleAuthManager

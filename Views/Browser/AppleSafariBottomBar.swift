@@ -75,20 +75,26 @@ public struct AppleSafariBottomBar: View {
 
         ZStack(alignment: .bottom) {
             HStack(spacing: 10) {
-                // Candado de Seguridad Interactivo (SSL Inspector)
-                Button {
-                    HapticManager.shared.touchLight()
-                    onOpenSSLInspector()
-                } label: {
-                    AnimatedPadlockIcon(isSecure: coordinator.currentIsSecure, size: 16)
+                // Candado de Seguridad Interactivo (SSL) en Web, o Icono Oficial de Buscador en Home/Búsqueda
+                if isEditingSearch || isNewTab {
+                    SearchEngineBarIconView(engine: SearchEngineType.active, size: 18)
                         .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                } else {
+                    Button {
+                        HapticManager.shared.touchLight()
+                        KeyboardDismissHelper.dismiss()
+                        onOpenSSLInspector()
+                    } label: {
+                        AnimatedPadlockIcon(isSecure: coordinator.currentIsSecure, size: 16)
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 // Campo de Texto de Búsqueda / Dirección
                 if isEditingSearch {
-                    TextField(Loc.tr("search_placeholder"), text: $searchInput)
+                    TextField(Loc.tr("bar_search_placeholder"), text: $searchInput)
                         .focused($isSearchFieldFocused)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                         .foregroundStyle(theme.textPrimary(for: scheme))
@@ -105,7 +111,7 @@ public struct AppleSafariBottomBar: View {
                         beginSearch()
                     } label: {
                         HStack(spacing: 6) {
-                            Text(isNewTab ? Loc.tr("search_placeholder") : (coordinator.currentDisplayTitle.isEmpty ? (currentTab?.displayHost ?? Loc.tr("search_placeholder")) : coordinator.currentDisplayTitle))
+                            Text(isNewTab ? Loc.tr("bar_search_placeholder") : (coordinator.currentDisplayTitle.isEmpty ? (currentTab?.displayHost ?? Loc.tr("bar_search_placeholder")) : coordinator.currentDisplayTitle))
                                 .font(.system(size: 14, weight: isNewTab ? .regular : .medium, design: .rounded))
                                 .foregroundStyle(isNewTab ? theme.textSecondary(for: scheme) : theme.textPrimary(for: scheme))
                                 .lineLimit(1)
@@ -188,6 +194,7 @@ public struct AppleSafariBottomBar: View {
         isEditingSearch = false
         isSearchFieldFocused = false
         searchInput = ""
+        KeyboardDismissHelper.dismiss()
     }
 
     private func commitSearch() {
@@ -234,6 +241,7 @@ public struct AppleSafariBottomBar: View {
                 iconSize: 17,
                 isEnabled: true
             ) {
+                KeyboardDismissHelper.dismiss()
                 onOpenTools()
             }
 
@@ -242,6 +250,7 @@ public struct AppleSafariBottomBar: View {
             // Botón Circular Espacios / Pestañas con Contador Numérico
             Button {
                 HapticManager.shared.touchMedium()
+                KeyboardDismissHelper.dismiss()
                 onOpenSpaces()
             } label: {
                 ZStack {
@@ -272,6 +281,7 @@ public struct AppleSafariBottomBar: View {
                 iconSize: 17,
                 isEnabled: true
             ) {
+                KeyboardDismissHelper.dismiss()
                 onNewTab()
             }
         }

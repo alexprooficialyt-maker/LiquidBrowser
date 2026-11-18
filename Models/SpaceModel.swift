@@ -46,3 +46,6 @@ public struct SpaceModel: Identifiable, Codable, Sendable, Hashable {
         ]
     }
 }
+
+// MARK: - Compatibility Alias
+public typealias SpaceFolder = SpaceModel

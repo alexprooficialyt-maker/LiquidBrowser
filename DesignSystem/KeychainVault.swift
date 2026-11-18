@@ -103,6 +103,12 @@ public final class KeychainVault: @unchecked Sendable {
         }
     }
 
+    // MARK: - Auto-Lock Preference
+    public var autoLockOnBackground: Bool {
+        get { UserDefaults.standard.bool(forKey: "smartbot_auto_lock_background") }
+        set { UserDefaults.standard.set(newValue, forKey: "smartbot_auto_lock_background") }
+    }
+
     // MARK: - 3. Hardware Biometric Verification
 
     public var biometricType: LABiometryType {
@@ -306,5 +312,6 @@ public final class KeychainVault: @unchecked Sendable {
     }
 }
 
-// MARK: - Compatibility Alias
+// MARK: - Compatibility Aliases
 public typealias KeychainSecurityHelper = KeychainVault
+public typealias VaultCredential = VaultCredentialEntry

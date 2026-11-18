@@ -52,31 +52,15 @@ public struct SavedSite: Identifiable, Codable, Sendable, Hashable {
 
     /// Sitios Predeterminados de SmartBot Browser (Apple, Wikipedia, GitHub, YouTube)
     public static func defaultSites(for profileID: UUID) -> [SavedSite] {
-        [
-            SavedSite(
-                title: "Apple",
-                url: URL(string: "https://www.apple.com")!,
-                profileID: profileID,
-                position: 0
-            ),
-            SavedSite(
-                title: "Wikipedia",
-                url: URL(string: "https://es.wikipedia.org")!,
-                profileID: profileID,
-                position: 1
-            ),
-            SavedSite(
-                title: "GitHub",
-                url: URL(string: "https://github.com")!,
-                profileID: profileID,
-                position: 2
-            ),
-            SavedSite(
-                title: "YouTube",
-                url: URL(string: "https://www.youtube.com")!,
-                profileID: profileID,
-                position: 3
-            )
+        let sites: [(String, String, Int)] = [
+            ("Apple", "https://www.apple.com", 0),
+            ("Wikipedia", "https://es.wikipedia.org", 1),
+            ("GitHub", "https://github.com", 2),
+            ("YouTube", "https://www.youtube.com", 3)
         ]
+        return sites.compactMap { title, urlString, pos in
+            guard let validURL = URL(string: urlString) else { return nil }
+            return SavedSite(title: title, url: validURL, profileID: profileID, position: pos)
+        }
     }
 }

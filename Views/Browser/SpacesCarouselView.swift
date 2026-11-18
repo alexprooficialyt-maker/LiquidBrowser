@@ -66,6 +66,7 @@ public struct SpacesCarouselView: View {
                 }
             }
             .onAppear {
+                KeyboardDismissHelper.dismiss()
                 if selectedSpaceID == nil {
                     selectedSpaceID = activeSpaces.first?.id
                 }
@@ -120,27 +121,40 @@ public struct SpacesCarouselView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
-                        // Menú Contextual de Espacio
+                        // Menú Contextual de Espacio: Fijar primero / Renovar / Editar / Eliminar
                         Button {
+                            HapticManager.shared.touchLight()
                             storage.pinSpaceToFirst(id: space.id)
                         } label: {
-                            Label(Loc.tr("space_pin_first"), systemImage: "pin")
+                            Label(Loc.tr("spaces_pin_first"), systemImage: "pin")
                         }
 
                         Button {
+                            HapticManager.shared.touchLight()
                             reloadAllTabs(in: space.id)
                         } label: {
-                            Label(Loc.tr("reload"), systemImage: "arrow.clockwise")
+                            Label(Loc.tr("spaces_renew_tabs"), systemImage: "arrow.clockwise")
+                        }
+
+                        Button {
+                            HapticManager.shared.touchLight()
+                            newSpaceName = space.name
+                            newSpaceIcon = space.icon
+                            newSpaceColor = space.colorAccent
+                            isCreatingSpace = true
+                        } label: {
+                            Label(Loc.tr("spaces_edit_folder"), systemImage: "pencil")
                         }
 
                         if spaces.count > 1 {
                             Button(role: .destructive) {
+                                HapticManager.shared.touchWarning()
                                 storage.deleteSpace(id: space.id)
                                 if selectedSpaceID == space.id {
                                     selectedSpaceID = spaces.first?.id
                                 }
                             } label: {
-                                Label(Loc.tr("space_delete"), systemImage: "trash")
+                                Label(Loc.tr("spaces_delete_folder"), systemImage: "trash")
                             }
                         }
                     }
@@ -149,11 +163,12 @@ public struct SpacesCarouselView: View {
                 // Botón Añadir Espacio (+)
                 Button {
                     HapticManager.shared.touchLight()
+                    KeyboardDismissHelper.dismiss()
                     isCreatingSpace = true
                 } label: {
                     HStack(spacing: 4) {
                         LiquidIconView(.newTab, size: 14, color: theme.textSecondary(for: scheme))
-                        Text(Loc.tr("space_new"))
+                        Text(Loc.tr("spaces_new_folder"))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(theme.textSecondary(for: scheme))
                     }

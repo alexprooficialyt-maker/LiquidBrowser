@@ -18,6 +18,9 @@ settings:
     TARGETED_DEVICE_FAMILY: "1"
     ENABLE_BITCODE: NO
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    INFOPLIST_KEY_NSFaceIDUsageDescription: "SmartBot Browser usa Face ID para proteger tu privacidad."
+    INFOPLIST_KEY_NSCameraUsageDescription: "Acceso a la cámara para escaneo de códigos QR."
+    INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "Permite exportar y guardar capturas completas de sitios web."
 
 targets:
   LiquidBrowser:
@@ -36,6 +39,7 @@ targets:
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_ALLOWED: NO
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "SmartBot Browser usa Face ID para proteger tu privacidad."
     info:
       path: Resources/Info.plist
       properties:
@@ -49,3 +53,14 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIRequiresFullScreen: true
+        NSFaceIDUsageDescription: "SmartBot Browser usa Face ID para proteger tu privacidad."
+        NSCameraUsageDescription: "Acceso a la cámara para escaneo de códigos QR."
+        NSPhotoLibraryAddUsageDescription: "Permite exportar y guardar capturas completas de sitios web."
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsArbitraryLoadsInWebContent: true
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - liquidbrowser
+              - http
+              - https

@@ -262,3 +262,35 @@ public struct PerplexityOfficialLogoView: View {
         .frame(width: size, height: size)
     }
 }
+
+// MARK: - SearchEngineBarIconView (Compact omnibar icon)
+
+/// Compact icon for the bottom omnibar — shows the active search engine logo
+public struct SearchEngineBarIconView: View {
+    public let engine: SearchEngineType
+    public var size: CGFloat = 18
+    @Environment(\.colorScheme) private var colorScheme
+
+    public init(engine: SearchEngineType, size: CGFloat = 18) {
+        self.engine = engine
+        self.size = size
+    }
+
+    public var body: some View {
+        SearchEngineLogoView(engine: engine, size: size, style: .fullColor)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+    }
+}
+
+// MARK: - SearchEngineType + StorageEngine Integration
+
+extension SearchEngineType {
+    public static var active: SearchEngineType {
+        guard let raw = UserDefaults.standard.string(forKey: "smartbot_default_search_engine"),
+              let engine = SearchEngineType(rawValue: raw) else {
+            return .google
+        }
+        return engine
+    }
+}

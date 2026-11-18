@@ -416,3 +416,6 @@ public struct ProfileSwitcherSheet: View {
         }
     }
 }
+
+// MARK: - Compatibility Alias
+public typealias ProfileManagerSheet = ProfileSwitcherSheet

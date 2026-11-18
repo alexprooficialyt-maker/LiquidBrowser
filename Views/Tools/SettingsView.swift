@@ -15,8 +15,11 @@ public struct SettingsView: View {
     @State private var isShowingPasswordVault: Bool = false
     @State private var isShowingAntiSpyDashboard: Bool = false
     @State private var isShowingCredits: Bool = false
+    @State private var isShowingPinSetupSheet: Bool = false
     @State private var isShowingFactoryResetAlert: Bool = false
     @State private var isShowingCacheClearedAlert: Bool = false
+    @State private var isShowingBiometricsErrorAlert: Bool = false
+    @State private var biometricsErrorMessage: String = ""
 
     private var appleGreen: Color {
         themeManager.appleGreen
@@ -59,6 +62,14 @@ public struct SettingsView: View {
             }
             .sheet(isPresented: $isShowingCredits) {
                 CreditsView()
+            }
+            .sheet(isPresented: $isShowingPinSetupSheet) {
+                PinSetupSheet()
+            }
+            .alert("Seguridad Biométrica", isPresented: $isShowingBiometricsErrorAlert) {
+                Button("Entendido", role: .cancel) {}
+            } message: {
+                Text(biometricsErrorMessage)
             }
             .alert(Loc.tr("settings_factory_reset"), isPresented: $isShowingFactoryResetAlert) {
                 Button(Loc.tr("settings_factory_reset_confirm"), role: .destructive) {
@@ -168,26 +179,80 @@ public struct SettingsView: View {
         }
     }
 
-    // MARK: - 4. Sección de Seguridad (Conmutadores Verdes Apple)
+    // MARK: - 4. Sección de Seguridad (Conmutadores Verdes Apple & Selector Independiente)
 
     @ViewBuilder
     private func securitySection(theme: ThemeManager, scheme: ColorScheme) -> some View {
         Section(Loc.tr("settings_security")) {
-            Toggle("Bloqueo de Aplicación al Salir", isOn: Binding(
+            // 1. Configurar / Cambiar PIN de 4 Dígitos
+            Button {
+                HapticManager.shared.touchLight()
+                isShowingPinSetupSheet = true
+            } label: {
+                HStack(spacing: 12) {
+                    LiquidIconView(.pinPad, size: 16, color: theme.textPrimary(for: scheme))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(KeychainVault.shared.hasAppPIN() ? "Cambiar PIN de 4 Dígitos" : "Configurar PIN de 4 Dígitos")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundStyle(theme.textPrimary(for: scheme))
+
+                        Text(KeychainVault.shared.hasAppPIN() ? "PIN activo y protegido en Secure Enclave" : "Protección adicional con código manual")
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(theme.textSecondary(for: scheme))
+                    }
+
+                    Spacer()
+
+                    Text(KeychainVault.shared.hasAppPIN() ? "Configurado" : "Inactivo")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(KeychainVault.shared.hasAppPIN() ? appleGreen : theme.textSecondary(for: scheme))
+
+                    LiquidIconView(.chevronRight, size: 12, color: theme.textSecondary(for: scheme))
+                }
+            }
+
+            // 2. Activar Face ID / Touch ID (Protegido con canEvaluatePolicy y tryEnableBiometrics)
+            if KeychainVault.shared.canUseBiometrics {
+                let bioType = KeychainVault.shared.biometricType
+                let bioName = bioType == .faceID ? "Usar Face ID" : (bioType == .touchID ? "Usar Touch ID" : "Usar Biometría")
+
+                Toggle(bioName, isOn: Binding(
+                    get: { KeychainVault.shared.isBiometricAuthEnabled },
+                    set: { newValue in
+                        if newValue {
+                            HapticManager.shared.touchSelection()
+                            Task {
+                                let (success, err) = await DeviceBiometryHelper.shared.tryEnableBiometrics()
+                                if success {
+                                    KeychainVault.shared.isBiometricAuthEnabled = true
+                                    KeychainVault.shared.isAppLockEnabled = true
+                                } else {
+                                    await MainActor.run {
+                                        KeychainVault.shared.isBiometricAuthEnabled = false
+                                        if let err = err {
+                                            biometricsErrorMessage = err
+                                            isShowingBiometricsErrorAlert = true
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            KeychainVault.shared.isBiometricAuthEnabled = false
+                        }
+                    }
+                ))
+                .tint(appleGreen)
+            }
+
+            // 3. Bloqueo Automático al Salir de la App
+            Toggle("Bloqueo automático al salir", isOn: Binding(
                 get: { KeychainVault.shared.isAppLockEnabled },
                 set: { KeychainVault.shared.isAppLockEnabled = $0 }
             ))
             .tint(appleGreen)
 
-            if KeychainVault.shared.canUseBiometrics {
-                let bioType = KeychainVault.shared.biometricType
-                Toggle(bioType == .faceID ? "Usar Face ID" : "Usar Touch ID", isOn: Binding(
-                    get: { KeychainVault.shared.isBiometricAuthEnabled },
-                    set: { KeychainVault.shared.isBiometricAuthEnabled = $0 }
-                ))
-                .tint(appleGreen)
-            }
-
+            // Bóveda de Contraseñas
             Button {
                 isShowingPasswordVault = true
             } label: {
@@ -200,6 +265,7 @@ public struct SettingsView: View {
                 }
             }
 
+            // Privacidad y Anti-Espías
             Button {
                 isShowingAntiSpyDashboard = true
             } label: {
@@ -292,6 +358,193 @@ public struct SettingsView: View {
         case .startpage: return "Resultados de Google con privacidad total"
         case .qwant: return "Buscador europeo que protege tus datos"
         case .perplexity: return "Búsqueda conversacional guiada por IA"
+        }
+    }
+}
+
+// MARK: - PinSetupSheet (Handcrafted Apple Liquid Glass PIN Creator & Confirmer)
+
+public struct PinSetupSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var systemColorScheme
+
+    @State private var pin: String = ""
+    @State private var confirmPin: String = ""
+    @State private var isConfirming: Bool = false
+    @State private var errorMessage: String? = nil
+    @State private var isShaking: Bool = false
+
+    public init() {}
+
+    public var body: some View {
+        let theme = ThemeManager.shared
+        let scheme = theme.effectiveScheme(systemScheme: systemColorScheme)
+
+        NavigationStack {
+            ZStack {
+                theme.background(for: scheme).ignoresSafeArea()
+
+                VStack(spacing: 24) {
+                    Spacer()
+
+                    ZStack {
+                        Circle()
+                            .fill(theme.surfaceElevated(for: scheme))
+                            .frame(width: 72, height: 72)
+                            .overlay {
+                                Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                            }
+                        LiquidIconView(.pinPad, size: 32, color: theme.textPrimary(for: scheme))
+                    }
+
+                    VStack(spacing: 6) {
+                        Text(isConfirming ? "Confirma tu PIN" : "Crea tu PIN de 4 dígitos")
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundStyle(theme.textPrimary(for: scheme))
+
+                        Text(isConfirming ? "Introduce el mismo código para verificarlo" : "Este PIN se usará para proteger la app y tus perfiles")
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundStyle(theme.textSecondary(for: scheme))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+
+                    // 4 Puntos de Estado
+                    HStack(spacing: 16) {
+                        let currentDigits = isConfirming ? confirmPin : pin
+                        ForEach(0..<4, id: \.self) { idx in
+                            Circle()
+                                .fill(idx < currentDigits.count ? theme.textPrimary(for: scheme) : theme.textPrimary(for: scheme).opacity(0.18))
+                                .frame(width: 14, height: 14)
+                                .overlay {
+                                    Circle().strokeBorder(theme.specularBorder(for: scheme), lineWidth: 0.5)
+                                }
+                        }
+                    }
+                    .modifier(ShakeEffect(shakes: isShaking ? 3 : 0))
+                    .padding(.vertical, 8)
+
+                    if let err = errorMessage {
+                        Text(err)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.red)
+                    } else {
+                        Text(" ").font(.system(size: 13))
+                    }
+
+                    numericPad(theme: theme, scheme: scheme)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+            }
+            .navigationTitle("Seguridad PIN")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                        .foregroundStyle(theme.textPrimary(for: scheme))
+                }
+                if KeychainVault.shared.hasAppPIN() {
+                    ToolbarItem(placement: .destructiveAction) {
+                        Button("Eliminar PIN") {
+                            KeychainVault.shared.deleteAppPIN()
+                            HapticManager.shared.notifyWarning()
+                            dismiss()
+                        }
+                        .foregroundStyle(Color.red)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func numericPad(theme: ThemeManager, scheme: ColorScheme) -> some View {
+        let keys = [
+            ["1", "2", "3"],
+            ["4", "5", "6"],
+            ["7", "8", "9"],
+            ["", "0", "delete"]
+        ]
+
+        VStack(spacing: 12) {
+            ForEach(keys, id: \.self) { row in
+                HStack(spacing: 20) {
+                    ForEach(row, id: \.self) { key in
+                        if key.isEmpty {
+                            Color.clear.frame(width: 68, height: 68)
+                        } else if key == "delete" {
+                            Button {
+                                HapticManager.shared.touchLight()
+                                if isConfirming {
+                                    if !confirmPin.isEmpty { confirmPin.removeLast() }
+                                } else {
+                                    if !pin.isEmpty { pin.removeLast() }
+                                }
+                                errorMessage = nil
+                            } label: {
+                                LiquidIconView(.close, size: 20, color: theme.textPrimary(for: scheme))
+                                    .frame(width: 68, height: 68)
+                                    .background(theme.surfaceElevated(for: scheme).opacity(0.6))
+                                    .clipShape(Circle())
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Button {
+                                HapticManager.shared.touchSelection()
+                                handleKey(key)
+                            } label: {
+                                Text(key)
+                                    .font(.system(size: 26, weight: .light, design: .rounded))
+                                    .foregroundStyle(theme.textPrimary(for: scheme))
+                                    .frame(width: 68, height: 68)
+                                    .background(theme.surfaceElevated(for: scheme))
+                                    .clipShape(Circle())
+                                    .overlay {
+                                        Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                                    }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func handleKey(_ digit: String) {
+        if !isConfirming {
+            guard pin.count < 4 else { return }
+            pin.append(digit)
+            if pin.count == 4 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    withAnimation(LiquidAnimation.smoothSpring) {
+                        isConfirming = true
+                    }
+                }
+            }
+        } else {
+            guard confirmPin.count < 4 else { return }
+            confirmPin.append(digit)
+            if confirmPin.count == 4 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if confirmPin == pin {
+                        KeychainVault.shared.saveAppPIN(pin)
+                        KeychainVault.shared.isAppLockEnabled = true
+                        HapticManager.shared.notifySuccess()
+                        dismiss()
+                    } else {
+                        HapticManager.shared.notifyError()
+                        errorMessage = "Los códigos PIN no coinciden. Inténtalo de nuevo."
+                        isShaking = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            isShaking = false
+                            confirmPin = ""
+                        }
+                    }
+                }
+            }
         }
     }
 }

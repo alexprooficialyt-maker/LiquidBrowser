@@ -279,6 +279,6 @@ public struct URLResolver: Sendable {
         }
         let engineRaw = UserDefaults.standard.string(forKey: "smartbot_default_search_engine") ?? SearchEngineType.google.rawValue
         let engine = SearchEngineType(rawValue: engineRaw) ?? .google
-        return engine.buildSearchURL(query: trimmed) ?? URL(string: "https://www.google.com")!
+        return engine.buildSearchURL(query: trimmed) ?? (URL(string: "https://www.google.com") ?? URL(fileURLWithPath: "/"))
     }
 }

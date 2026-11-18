@@ -73,6 +73,9 @@ public struct OnboardingFlowView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(LiquidAnimation.smoothSpring, value: currentStep)
+                .onChange(of: currentStep) { _, _ in
+                    KeyboardDismissHelper.dismiss()
+                }
 
                 // Barra Inferior de Navegación Fija
                 bottomNavigationControls(theme: theme, scheme: effectiveScheme)
@@ -107,7 +110,7 @@ public struct OnboardingFlowView: View {
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textPrimary(for: scheme))
 
-                    Text(Loc.tr("onboarding_step1_sub"))
+                    Text(Loc.tr("onboarding_step1_subtitle"))
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(theme.textSecondary(for: scheme))
                         .multilineTextAlignment(.center)
@@ -209,7 +212,7 @@ public struct OnboardingFlowView: View {
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textPrimary(for: scheme))
 
-                    Text(Loc.tr("onboarding_step2_sub"))
+                    Text(Loc.tr("onboarding_step2_subtitle"))
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(theme.textSecondary(for: scheme))
                         .multilineTextAlignment(.center)
@@ -219,11 +222,11 @@ public struct OnboardingFlowView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Campo de Nombre Único (Obligatorio)
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(Loc.tr("onboarding_step2_name_label"))
+                        Text("Nombre del perfil")
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(theme.textSecondary(for: scheme))
 
-                        TextField(Loc.tr("onboarding_step2_name_placeholder"), text: $userName)
+                        TextField(Loc.tr("onboarding_name_placeholder"), text: $userName)
                             .font(.system(size: 16))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 14)
@@ -245,7 +248,7 @@ public struct OnboardingFlowView: View {
 
                     // Selector de Color con Círculos Profesionales de 36x36 pt
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(Loc.tr("onboarding_step2_color_label"))
+                        Text(Loc.tr("onboarding_color_title"))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(theme.textSecondary(for: scheme))
 
@@ -326,7 +329,7 @@ public struct OnboardingFlowView: View {
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textPrimary(for: scheme))
 
-                    Text(Loc.tr("onboarding_step3_sub"))
+                    Text(Loc.tr("onboarding_step3_subtitle"))
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(theme.textSecondary(for: scheme))
                         .multilineTextAlignment(.center)
@@ -409,7 +412,7 @@ public struct OnboardingFlowView: View {
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textPrimary(for: scheme))
 
-                    Text(Loc.tr("onboarding_step4_sub"))
+                    Text(Loc.tr("onboarding_step4_subtitle"))
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(theme.textSecondary(for: scheme))
                         .multilineTextAlignment(.center)
@@ -494,7 +497,7 @@ public struct OnboardingFlowView: View {
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textPrimary(for: scheme))
 
-                    Text(Loc.tr("onboarding_step5_sub"))
+                    Text(Loc.tr("onboarding_step5_subtitle"))
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(theme.textSecondary(for: scheme))
                         .multilineTextAlignment(.center)
@@ -531,7 +534,12 @@ public struct OnboardingFlowView: View {
                                 if enabled {
                                     HapticManager.shared.touchSelection()
                                     Task {
-                                        _ = await biometryHelper.authenticate(reason: "Activar acceso seguro a SmartBot Browser")
+                                        let (success, _) = await biometryHelper.tryEnableBiometrics()
+                                        if !success {
+                                            await MainActor.run {
+                                                isBiometricsEnabled = false
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -656,6 +664,9 @@ public struct OnboardingFlowView: View {
         if currentStep == 2 {
             return !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
+        if currentStep == 5 && isPinSetupActive {
+            return pinInput.count == 4 && pinConfirmInput == pinInput
+        }
         return true
     }
 
@@ -700,7 +711,7 @@ public struct OnboardingFlowView: View {
                         finishOnboarding()
                     }
                 } label: {
-                    Text(currentStep == totalSteps ? Loc.tr("start") : Loc.tr("continue"))
+                    Text(currentStep == totalSteps ? Loc.tr("onboarding_start_button") : Loc.tr("continue"))
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundStyle(scheme == .dark ? Color.black : Color.white)
                         .frame(maxWidth: .infinity)
@@ -715,9 +726,12 @@ public struct OnboardingFlowView: View {
             .padding(.horizontal, 24)
 
             // Opción Omitir en Paso de Seguridad
-            if currentStep == totalSteps && !isBiometricsEnabled && !isPinSetupActive {
+            if currentStep == totalSteps && (!isPinSetupActive || pinInput.count < 4 || pinConfirmInput != pinInput) {
                 Button {
                     HapticManager.shared.touchLight()
+                    isPinSetupActive = false
+                    pinInput = ""
+                    pinConfirmInput = ""
                     finishOnboarding()
                 } label: {
                     Text(Loc.tr("onboarding_security_skip"))

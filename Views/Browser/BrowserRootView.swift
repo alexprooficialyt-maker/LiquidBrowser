@@ -160,6 +160,11 @@ public struct BrowserRootView: View {
         )) { actItem in
             ActivityShareSheet(activityItems: [actItem.item])
         }
+        .onChange(of: isShowingSpacesCarousel) { _, _ in KeyboardDismissHelper.dismiss() }
+        .onChange(of: isShowingProfileSwitcher) { _, _ in KeyboardDismissHelper.dismiss() }
+        .onChange(of: isShowingToolsSheet) { _, _ in KeyboardDismissHelper.dismiss() }
+        .onChange(of: isShowingSettings) { _, _ in KeyboardDismissHelper.dismiss() }
+        .onChange(of: storage.activeTabID) { _, _ in KeyboardDismissHelper.dismiss() }
     }
 
     // MARK: - Contenedor Web Directo (Cero Bloqueo Táctil)

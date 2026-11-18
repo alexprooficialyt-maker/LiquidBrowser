@@ -227,30 +227,56 @@ public struct LiquidIconShape: Shape {
 
         // --- SEGURIDAD Y SSL ---
         case .lockSSL:
-            p.addRoundedRect(in: CGRect(x: w * 0.24, y: h * 0.44, width: w * 0.52, height: h * 0.42), cornerSize: CGSize(width: 4, height: 4))
-            p.move(to: CGPoint(x: w * 0.34, y: h * 0.44))
-            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.30))
-            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.30), radius: w * 0.16, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
-            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.44))
-            // Bocallave
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.58))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.72))
+            // Shackle arc (proportioned arch): center top, strokeable path
+            // Body: rounded rectangle bottom 55% of height, cornerRadius 3pt equivalent
+            // Keyhole: small teardrop shape centered in body
+            // Shackle: arc from body-left to body-right, rises to top 20% of frame
+            let bodyRect = CGRect(x: w*0.22, y: h*0.44, width: w*0.56, height: h*0.46)
+            p.addRoundedRect(in: bodyRect, cornerSize: CGSize(width: w*0.10, height: w*0.10))
+            // Shackle arc
+            p.move(to: CGPoint(x: w*0.30, y: h*0.46))
+            p.addLine(to: CGPoint(x: w*0.30, y: h*0.30))
+            p.addArc(center: CGPoint(x: w*0.50, y: h*0.30), radius: w*0.20,
+                     startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: CGPoint(x: w*0.70, y: h*0.46))
+            // Keyhole: circle + small teardrop
+            p.addEllipse(in: CGRect(x: w*0.42, y: h*0.55, width: w*0.16, height: w*0.16))
+            p.move(to: CGPoint(x: w*0.46, y: h*0.68))
+            p.addLine(to: CGPoint(x: w*0.54, y: h*0.68))
+            p.addLine(to: CGPoint(x: w*0.52, y: h*0.78))
+            p.addLine(to: CGPoint(x: w*0.48, y: h*0.78))
+            p.closeSubpath()
 
         case .unlockSSL:
-            p.addRoundedRect(in: CGRect(x: w * 0.24, y: h * 0.44, width: w * 0.52, height: h * 0.42), cornerSize: CGSize(width: 4, height: 4))
-            p.move(to: CGPoint(x: w * 0.34, y: h * 0.44))
-            p.addLine(to: CGPoint(x: w * 0.34, y: h * 0.26))
-            p.addArc(center: CGPoint(x: w * 0.50, y: h * 0.26), radius: w * 0.16, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
-            p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.32))
+            // Same body, but shackle is OPEN (right side of arc is detached and raised)
+            let bodyRect = CGRect(x: w*0.22, y: h*0.44, width: w*0.56, height: h*0.46)
+            p.addRoundedRect(in: bodyRect, cornerSize: CGSize(width: w*0.10, height: w*0.10))
+            // Open shackle: left side connected, right side raised and free
+            p.move(to: CGPoint(x: w*0.30, y: h*0.46))
+            p.addLine(to: CGPoint(x: w*0.30, y: h*0.26))
+            p.addArc(center: CGPoint(x: w*0.50, y: h*0.26), radius: w*0.20,
+                     startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            p.addLine(to: CGPoint(x: w*0.70, y: h*0.14))
+            // Keyhole
+            p.addEllipse(in: CGRect(x: w*0.42, y: h*0.55, width: w*0.16, height: w*0.16))
+            p.move(to: CGPoint(x: w*0.46, y: h*0.68))
+            p.addLine(to: CGPoint(x: w*0.54, y: h*0.68))
+            p.addLine(to: CGPoint(x: w*0.52, y: h*0.78))
+            p.addLine(to: CGPoint(x: w*0.48, y: h*0.78))
+            p.closeSubpath()
 
         case .warningSSL:
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.16))
-            p.addLine(to: CGPoint(x: w * 0.85, y: h * 0.82))
-            p.addLine(to: CGPoint(x: w * 0.15, y: h * 0.82))
+            // Triangle with rounded corners + exclamation mark
+            p.move(to: CGPoint(x: w*0.50, y: h*0.12))
+            p.addQuadCurve(to: CGPoint(x: w*0.90, y: h*0.84), control: CGPoint(x: w*0.95, y: h*0.70))
+            p.addQuadCurve(to: CGPoint(x: w*0.10, y: h*0.84), control: CGPoint(x: w*0.50, y: h*1.00))
+            p.addQuadCurve(to: CGPoint(x: w*0.50, y: h*0.12), control: CGPoint(x: w*0.05, y: h*0.70))
             p.closeSubpath()
-            p.move(to: CGPoint(x: w * 0.50, y: h * 0.40))
-            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.60))
-            p.addEllipse(in: CGRect(x: w * 0.47, y: h * 0.68, width: w * 0.06, height: h * 0.06))
+            // Exclamation body
+            p.move(to: CGPoint(x: w*0.50, y: h*0.36))
+            p.addLine(to: CGPoint(x: w*0.50, y: h*0.62))
+            // Exclamation dot
+            p.addEllipse(in: CGRect(x: w*0.44, y: h*0.68, width: w*0.12, height: h*0.12))
 
         case .shieldBlocker:
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.14))
