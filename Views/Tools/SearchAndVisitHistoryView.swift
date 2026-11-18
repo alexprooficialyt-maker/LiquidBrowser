@@ -166,7 +166,7 @@ public struct SearchAndVisitHistoryView: View {
                         dismiss()
                     } label: {
                         HStack(spacing: 12) {
-                            LiquidIconView(.globeLanguage, size: 16, color: theme.textSecondary(for: scheme))
+                            FaviconView(url: visit.url, title: visit.title, size: 24, cornerRadius: 6)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(visit.title)

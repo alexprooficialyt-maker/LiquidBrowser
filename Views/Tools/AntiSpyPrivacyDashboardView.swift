@@ -74,7 +74,7 @@ public struct AntiSpyPrivacyDashboardView: View {
             Toggle("Escudo Anti-Espías Global", isOn: $engine.isShieldEnabledGlobally)
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundStyle(theme.textPrimary(for: scheme))
-                .tint(theme.textPrimary(for: scheme))
+                .tint(Color(hex: "34C759"))
                 .padding(.top, 8)
                 .padding(.horizontal, 8)
         }

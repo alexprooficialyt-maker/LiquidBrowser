@@ -88,7 +88,7 @@ public struct BookmarksView: View {
                                     onSelectURL(item.url)
                                 }) {
                                     HStack(spacing: 12) {
-                                        LiquidIconView(.bookmark, size: 16, color: theme.textPrimary(for: colorScheme))
+                                        FaviconView(url: item.url, title: item.displayTitle, size: 28, cornerRadius: 6)
 
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(item.displayTitle)

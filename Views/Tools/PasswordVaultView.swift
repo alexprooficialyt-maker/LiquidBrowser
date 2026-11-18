@@ -230,7 +230,9 @@ public struct PasswordVaultView: View {
     @ViewBuilder
     private func credentialRow(cred: VaultCredentialEntry, theme: ThemeManager, scheme: ColorScheme) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
+                FaviconView(url: URL(string: "https://\(cred.domain)"), title: cred.domain, size: 28, cornerRadius: 6)
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cred.domain)
                         .font(.system(size: 15, weight: .bold, design: .rounded))

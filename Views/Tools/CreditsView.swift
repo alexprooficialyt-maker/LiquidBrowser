@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - CreditsView (SmartBot Browser Apple-Grade Credits)
+// MARK: - AboutSmartBotView / CreditsView (SmartBot Browser Apple-Grade Credits)
 
 public struct CreditsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -23,20 +23,20 @@ public struct CreditsView: View {
                             ZStack {
                                 Circle()
                                     .fill(theme.surfaceElevated(for: scheme))
-                                    .frame(width: 84, height: 84)
+                                    .frame(width: 88, height: 88)
                                     .overlay {
                                         Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
                                     }
 
-                                LiquidIconView(.shieldActive, size: 40, color: theme.textPrimary(for: scheme))
+                                LiquidIconView(.shieldActive, size: 44, color: theme.textPrimary(for: scheme))
                             }
 
                             VStack(spacing: 4) {
                                 Text("SmartBot Browser")
-                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .font(.system(size: 26, weight: .bold, design: .rounded))
                                     .foregroundStyle(theme.textPrimary(for: scheme))
 
-                                Text("Versión 1.0.0 (Build Producción)")
+                                Text("Versión 18.2.0 • Edición Liquid Glass")
                                     .font(.system(size: 13, weight: .regular))
                                     .foregroundStyle(theme.textSecondary(for: scheme))
                             }
@@ -51,16 +51,16 @@ public struct CreditsView: View {
                                 .tracking(1.5)
 
                             Text("Hecho por Rubén Aguilarte")
-                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
                                 .foregroundStyle(theme.textPrimary(for: scheme))
 
                             Text("Arquitecto Principal de iOS & Diseñador de Sistemas")
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(theme.textSecondary(for: scheme))
                         }
-                        .padding(20)
+                        .padding(22)
                         .frame(maxWidth: .infinity)
-                        .liquidGlassCard(cornerRadius: 20)
+                        .liquidGlassCard(cornerRadius: 22)
 
                         // 3. Especificaciones de Ingeniería y Privacidad
                         VStack(alignment: .leading, spacing: 14) {
@@ -73,7 +73,7 @@ public struct CreditsView: View {
                                 specRow(title: "Lenguaje y Framework", value: "Swift 5.9 + SwiftUI Nativo", theme: theme, scheme: scheme)
                                 Divider().background(theme.specularBorder(for: scheme))
 
-                                specRow(title: "Motor Web", value: "WebKit Aislado en Memoria", theme: theme, scheme: scheme)
+                                specRow(title: "Motor WebKit", value: "Aislamiento Estricto en Memoria", theme: theme, scheme: scheme)
                                 Divider().background(theme.specularBorder(for: scheme))
 
                                 specRow(title: "Seguridad y Cifrado", value: "Apple Secure Enclave + Keychain", theme: theme, scheme: scheme)
@@ -82,7 +82,7 @@ public struct CreditsView: View {
                                 specRow(title: "Aceleración Gráfica", value: "Metal GPU + Liquid Glass", theme: theme, scheme: scheme)
                                 Divider().background(theme.specularBorder(for: scheme))
 
-                                specRow(title: "Privacidad", value: "Sin telemetría externa ni rastreo", theme: theme, scheme: scheme)
+                                specRow(title: "Privacidad", value: "100% Cero Telemetría y Cero Rastreadores", theme: theme, scheme: scheme)
                             }
                             .padding(16)
                             .liquidGlassCard(cornerRadius: 18)
@@ -126,3 +126,6 @@ public struct CreditsView: View {
         }
     }
 }
+
+// MARK: - Compatibility Bridge
+public typealias AboutSmartBotView = CreditsView

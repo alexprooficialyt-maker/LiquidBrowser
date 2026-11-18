@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - SettingsView (Comprehensive Settings & Factory Reset Zone)
+// MARK: - SettingsView (Comprehensive Settings, Green Apple Toggles & Factory Reset Zone)
 
 public struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -16,6 +16,9 @@ public struct SettingsView: View {
     @State private var isShowingAntiSpyDashboard: Bool = false
     @State private var isShowingCredits: Bool = false
     @State private var isShowingFactoryResetAlert: Bool = false
+    @State private var isShowingCacheClearedAlert: Bool = false
+
+    private let appleGreen = Color(hex: "34C759")
 
     public init() {}
 
@@ -28,20 +31,15 @@ public struct SettingsView: View {
                 theme.background(for: scheme).ignoresSafeArea()
 
                 List {
-                    // SECCIÓN 1: IDIOMA
+                    // SECCIÓN 1: IDIOMA (15 IDIOMAS CON BANDERAS OFICIALES)
                     Section(Loc.tr("settings_language")) {
                         ForEach(AppLanguage.allCases) { lang in
                             Button {
                                 HapticManager.shared.touchSelection()
                                 locManager.currentLanguage = lang
                             } label: {
-                                HStack {
-                                    Text(lang.flagSymbol)
-                                        .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                        .frame(width: 30, height: 30)
-                                        .background(theme.surfaceElevated(for: scheme))
-                                        .clipShape(Circle())
-                                        .foregroundStyle(theme.textPrimary(for: scheme))
+                                HStack(spacing: 12) {
+                                    LanguageFlagView(language: lang, size: 24)
 
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(lang.displayName)
@@ -74,7 +72,7 @@ public struct SettingsView: View {
                         .pickerStyle(.inline)
                     }
 
-                    // SECCIÓN 3: MOTOR DE BÚSQUEDA
+                    // SECCIÓN 3: MOTOR DE BÚSQUEDA (8 MOTORES OFICIALES)
                     Section(Loc.tr("settings_search_engine")) {
                         ForEach(SearchEngineType.allCases) { engine in
                             Button {
@@ -83,14 +81,14 @@ public struct SettingsView: View {
                                 UserDefaults.standard.set(engine.rawValue, forKey: "smartbot_default_search_engine")
                             } label: {
                                 HStack(spacing: 12) {
-                                    BrandLogoView(engine: engine, style: .fullColor, size: 24)
+                                    SearchEngineLogoView(engine: engine, size: 24)
 
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(engine.displayName)
                                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                                             .foregroundStyle(theme.textPrimary(for: scheme))
 
-                                        Text(engine.searchDescription)
+                                        Text(engineSubtitle(engine))
                                             .font(.system(size: 11, weight: .regular))
                                             .foregroundStyle(theme.textSecondary(for: scheme))
                                             .lineLimit(1)
@@ -107,13 +105,13 @@ public struct SettingsView: View {
                         }
                     }
 
-                    // SECCIÓN 4: SEGURIDAD Y HERRAMIENTAS
+                    // SECCIÓN 4: SEGURIDAD Y HERRAMIENTAS (INTERRUPTORES VERDES APPLE)
                     Section(Loc.tr("settings_security")) {
                         Toggle("Bloqueo de Aplicación al Salir", isOn: Binding(
                             get: { KeychainVault.shared.isAppLockEnabled },
                             set: { KeychainVault.shared.isAppLockEnabled = $0 }
                         ))
-                        .tint(theme.textPrimary(for: scheme))
+                        .tint(appleGreen)
 
                         if KeychainVault.shared.canUseBiometrics {
                             let bioType = KeychainVault.shared.biometricType
@@ -121,7 +119,7 @@ public struct SettingsView: View {
                                 get: { KeychainVault.shared.isBiometricAuthEnabled },
                                 set: { KeychainVault.shared.isBiometricAuthEnabled = $0 }
                             ))
-                            .tint(theme.textPrimary(for: scheme))
+                            .tint(appleGreen)
                         }
 
                         Button {
@@ -147,9 +145,23 @@ public struct SettingsView: View {
                                 LiquidIconView(.chevronRight, size: 12, color: theme.textSecondary(for: scheme))
                             }
                         }
+
+                        // Limpiar Caché y Favicons
+                        Button {
+                            HapticManager.shared.touchMedium()
+                            FaviconFetcherService.shared.clearFaviconCache()
+                            isShowingCacheClearedAlert = true
+                        } label: {
+                            HStack {
+                                LiquidIconView(.renewTab, size: 16, color: theme.textPrimary(for: scheme))
+                                Text("Vaciar Caché y Favicons")
+                                    .foregroundStyle(theme.textPrimary(for: scheme))
+                                Spacer()
+                            }
+                        }
                     }
 
-                    // SECCIÓN 5: CRÉDITOS Y ACERCA DE
+                    // SECCIÓN 5: CRÉDITOS Y AUTORÍA OFICIAL
                     Section(Loc.tr("settings_credits")) {
                         Button {
                             isShowingCredits = true
@@ -162,8 +174,8 @@ public struct SettingsView: View {
                                         .foregroundStyle(theme.textPrimary(for: scheme))
 
                                     Text("Hecho por Rubén Aguilarte")
-                                        .font(.system(size: 12, weight: .regular))
-                                        .foregroundStyle(theme.textSecondary(for: scheme))
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(theme.textPrimary(for: scheme))
                                 }
                                 Spacer()
                                 LiquidIconView(.chevronRight, size: 12, color: theme.textSecondary(for: scheme))
@@ -224,6 +236,24 @@ public struct SettingsView: View {
             } message: {
                 Text(Loc.tr("settings_factory_reset_warning"))
             }
+            .alert("Caché Vaciada", isPresented: $isShowingCacheClearedAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Se han eliminado los datos temporales y favicons descargados correctamente.")
+            }
+        }
+    }
+
+    private func engineSubtitle(_ engine: SearchEngineType) -> String {
+        switch engine {
+        case .google: return "Resultados web globales y completos"
+        case .duckduckgo: return "Privacidad estricta sin rastreo publicitario"
+        case .brave: return "Búsqueda independiente y segura"
+        case .ecosia: return "Financia la plantación de árboles"
+        case .bing: return "Motor inteligente de Microsoft"
+        case .startpage: return "Resultados de Google con privacidad total"
+        case .qwant: return "Buscador europeo que protege tus datos"
+        case .perplexity: return "Búsqueda conversacional guiada por IA"
         }
     }
 }
