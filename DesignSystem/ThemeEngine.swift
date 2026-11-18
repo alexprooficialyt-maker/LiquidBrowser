@@ -2,10 +2,12 @@ import SwiftUI
 
 // MARK: - AppThemeMode
 
-public enum AppThemeMode: String, CaseIterable, Codable, Sendable {
+public enum AppThemeMode: String, CaseIterable, Identifiable, Codable, Sendable {
     case system = "system"
     case light  = "light"
     case dark   = "dark"
+
+    public var id: String { rawValue }
 
     public var title: String {
         switch self {
@@ -13,6 +15,10 @@ public enum AppThemeMode: String, CaseIterable, Codable, Sendable {
         case .light:  return Loc.tr("onboarding_theme_light")
         case .dark:   return Loc.tr("onboarding_theme_dark")
         }
+    }
+
+    public var displayName: String {
+        title
     }
 
     public var description: String {

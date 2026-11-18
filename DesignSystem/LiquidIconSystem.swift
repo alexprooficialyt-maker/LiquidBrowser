@@ -78,13 +78,15 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case chevronLeft
     case renewTab
 
-    // 8. Perfiles
+    // 8. Perfiles y Apariencia
     case userProfile
     case briefcase
     case graduationCap
     case star
     case sparkler
     case eye
+    case moonDark
+    case sunLight
 }
 
 // MARK: - Handcrafted Bézier Shapes Implementation
@@ -399,6 +401,27 @@ public struct LiquidIconShape: Shape {
             p.addQuadCurve(to: CGPoint(x: w * 0.16, y: h * 0.50), control: CGPoint(x: w * 0.50, y: h * 0.78))
             p.closeSubpath()
             p.addEllipse(in: CGRect(x: w * 0.40, y: h * 0.40, width: w * 0.20, height: h * 0.20))
+
+        case .moonDark:
+            p.move(to: CGPoint(x: w * 0.50, y: h * 0.18))
+            p.addCurve(to: CGPoint(x: w * 0.50, y: h * 0.82), control1: CGPoint(x: w * 0.85, y: h * 0.30), control2: CGPoint(x: w * 0.85, y: h * 0.70))
+            p.addCurve(to: CGPoint(x: w * 0.50, y: h * 0.18), control1: CGPoint(x: w * 0.65, y: h * 0.65), control2: CGPoint(x: w * 0.65, y: h * 0.35))
+            p.closeSubpath()
+
+        case .sunLight:
+            p.addEllipse(in: CGRect(x: w * 0.35, y: h * 0.35, width: w * 0.30, height: h * 0.30))
+            let sunCenter = CGPoint(x: w * 0.50, y: h * 0.50)
+            let rIn = w * 0.22
+            let rOut = w * 0.34
+            for i in 0..<8 {
+                let angle = Double(i) * Double.pi / 4.0
+                let x1 = sunCenter.x + CGFloat(cos(angle)) * rIn
+                let y1 = sunCenter.y + CGFloat(sin(angle)) * rIn
+                let x2 = sunCenter.x + CGFloat(cos(angle)) * rOut
+                let y2 = sunCenter.y + CGFloat(sin(angle)) * rOut
+                p.move(to: CGPoint(x: x1, y: y1))
+                p.addLine(to: CGPoint(x: x2, y: y2))
+            }
 
         case .pin:
             p.move(to: CGPoint(x: w * 0.35, y: h * 0.22))
