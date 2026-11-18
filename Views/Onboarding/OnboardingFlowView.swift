@@ -467,7 +467,7 @@ public struct OnboardingFlowView: View {
     private func engineSubtitle(_ engine: SearchEngineType) -> String {
         switch engine {
         case .google: return "Resultados web globales y completos"
-        case .duckduckgo: return "Privacidad estricta sin rastreo publicitario"
+        case .duckDuckGo: return "Privacidad estricta sin rastreo publicitario"
         case .brave: return "Búsqueda independiente y segura"
         case .ecosia: return "Financia la plantación de árboles"
         case .bing: return "Motor inteligente de Microsoft"

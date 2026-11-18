@@ -116,6 +116,18 @@ public struct ProfileColorCircleView: View {
         self.onSelect = onSelect
     }
 
+    public init(
+        color: ProfileAccentColor,
+        isSelected: Bool,
+        size: CGFloat = 36,
+        onSelect: @escaping () -> Void = {}
+    ) {
+        self.accent = color
+        self.isSelected = isSelected
+        self.size = size
+        self.onSelect = onSelect
+    }
+
     public var body: some View {
         Button(action: {
             HapticManager.shared.touchLight()
@@ -276,3 +288,30 @@ extension View {
 // MARK: - Compatibility Alias
 public typealias ThemeEngine = ThemeManager
 public typealias MonochromeAccentTone = ProfileAccentColor
+
+// MARK: - Color Hex Initializer Extension
+extension Color {
+    public init(hex: String) {
+        let cleanHex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: cleanHex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch cleanHex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255.0,
+            green: Double(g) / 255.0,
+            blue: Double(b) / 255.0,
+            opacity: Double(a) / 255.0
+        )
+    }
+}

@@ -62,6 +62,7 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case qrCode
     case pdfExport
     case history
+    case historyClock
     case bookmarks
     case bookmark
     case downloads
@@ -453,7 +454,7 @@ public struct LiquidIconShape: Shape {
             p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.82))
             p.closeSubpath()
 
-        case .history:
+        case .history, .historyClock:
             p.addEllipse(in: CGRect(x: w * 0.18, y: h * 0.18, width: w * 0.64, height: h * 0.64))
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.30))
             p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.50))
