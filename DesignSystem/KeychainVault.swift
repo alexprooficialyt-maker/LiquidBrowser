@@ -4,7 +4,7 @@ import LocalAuthentication
 
 // MARK: - VaultCredentialEntry Model
 
-public struct VaultCredentialEntry: Identifiable, Codable, Sendable {
+public struct VaultCredentialEntry: Identifiable, Codable, Sendable, Hashable {
     public let id: UUID
     public var domain: String
     public var username: String
@@ -32,7 +32,7 @@ public struct VaultCredentialEntry: Identifiable, Codable, Sendable {
     }
 }
 
-// MARK: - KeychainVault (High-Security iOS Keychain Wrapper)
+// MARK: - KeychainVault (Crash-Proof iOS Keychain Wrapper)
 
 public final class KeychainVault: @unchecked Sendable {
     public static let shared = KeychainVault()
@@ -67,7 +67,7 @@ public final class KeychainVault: @unchecked Sendable {
     }
 
     public func verifyAppPIN(_ pin: String) -> Bool {
-        guard let saved = getAppPIN() else { return false }
+        guard let saved = getAppPIN(), !saved.isEmpty else { return false }
         return saved == pin
     }
 
@@ -76,14 +76,14 @@ public final class KeychainVault: @unchecked Sendable {
         delete(key: appPINKey)
     }
 
-    // Compatibilidad retroactiva
+    // Compatibility aliases
     @discardableResult public func savePIN(_ pin: String) -> Bool { saveAppPIN(pin) }
     public func getPIN() -> String? { getAppPIN() }
     public func hasPIN() -> Bool { hasAppPIN() }
     public func verifyPIN(_ input: String) -> Bool { verifyAppPIN(input) }
     @discardableResult public func deletePIN() -> Bool { deleteAppPIN() }
 
-    // MARK: - 2. App Lock Persistent State
+    // MARK: - 2. Persistent Security Preferences
 
     public var isAppLockEnabled: Bool {
         get {
@@ -94,8 +94,6 @@ public final class KeychainVault: @unchecked Sendable {
         }
     }
 
-    // MARK: - 3. Biometric State & Hardware Capability
-
     public var isBiometricAuthEnabled: Bool {
         get {
             UserDefaults.standard.bool(forKey: biometricsEnabledKey)
@@ -104,6 +102,8 @@ public final class KeychainVault: @unchecked Sendable {
             UserDefaults.standard.set(newValue, forKey: biometricsEnabledKey)
         }
     }
+
+    // MARK: - 3. Hardware Biometric Verification
 
     public var biometricType: LABiometryType {
         let context = LAContext()
@@ -237,13 +237,19 @@ public final class KeychainVault: @unchecked Sendable {
         return true
     }
 
-    // MARK: - Internal Keychain CRUD Operations
+    // MARK: - Internal Safe Keychain CRUD Operations
 
     private func saveOrUpdate(key: String, data: Data) -> Bool {
         if read(key: key) != nil {
-            return update(key: key, data: data)
-        } else {
+            if update(key: key, data: data) {
+                return true
+            }
             return create(key: key, data: data)
+        } else {
+            if create(key: key, data: data) {
+                return true
+            }
+            return update(key: key, data: data)
         }
     }
 
@@ -267,12 +273,12 @@ public final class KeychainVault: @unchecked Sendable {
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
-        var dataTypeRef: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &dataTypeRef)
-        if status == errSecSuccess, let data = dataTypeRef as? Data {
-            return data
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess, let data = item as? Data else {
+            return nil
         }
-        return nil
+        return data
     }
 
     private func update(key: String, data: Data) -> Bool {

@@ -15,6 +15,14 @@ public enum AppThemeMode: String, CaseIterable, Codable, Sendable {
         }
     }
 
+    public var description: String {
+        switch self {
+        case .system: return Loc.tr("onboarding_theme_system_desc")
+        case .light:  return Loc.tr("onboarding_theme_light_desc")
+        case .dark:   return Loc.tr("onboarding_theme_dark_desc")
+        }
+    }
+
     public var colorScheme: ColorScheme? {
         switch self {
         case .system: return nil
@@ -24,7 +32,7 @@ public enum AppThemeMode: String, CaseIterable, Codable, Sendable {
     }
 }
 
-// MARK: - ProfileAccentColor Palette
+// MARK: - ProfileAccentColor Palette (8 Apple-Grade Accents)
 
 public enum ProfileAccentColor: String, CaseIterable, Identifiable, Codable, Sendable {
     case monochrome = "monochrome"
@@ -56,33 +64,94 @@ public enum ProfileAccentColor: String, CaseIterable, Identifiable, Codable, Sen
         case .monochrome:
             return scheme == .dark ? Color.white : Color.black
         case .titanium:
-            return scheme == .dark ? Color(red: 0.90, green: 0.90, blue: 0.92) : Color(red: 0.18, green: 0.18, blue: 0.20)
+            return scheme == .dark ? Color(red: 0.90, green: 0.90, blue: 0.92) : Color(red: 0.22, green: 0.22, blue: 0.24)
         case .graphite:
             return scheme == .dark ? Color(red: 0.70, green: 0.72, blue: 0.75) : Color(red: 0.28, green: 0.30, blue: 0.33)
         case .sapphire:
-            return Color(red: 0.04, green: 0.48, blue: 0.98)
+            return Color(red: 0.04, green: 0.52, blue: 1.00)
         case .emerald:
-            return Color(red: 0.20, green: 0.78, blue: 0.35)
+            return Color(red: 0.204, green: 0.780, blue: 0.349)
         case .ruby:
-            return Color(red: 0.98, green: 0.22, blue: 0.28)
+            return Color(red: 1.00, green: 0.23, blue: 0.30)
         case .amethyst:
-            return Color(red: 0.69, green: 0.32, blue: 0.87)
+            return Color(red: 0.70, green: 0.35, blue: 0.90)
         case .amber:
-            return Color(red: 1.00, green: 0.62, blue: 0.04)
+            return Color(red: 1.00, green: 0.65, blue: 0.05)
         }
     }
 
     public var swatchColor: Color {
         switch self {
-        case .monochrome: return Color.gray
-        case .titanium:   return Color(red: 0.65, green: 0.65, blue: 0.68)
-        case .graphite:   return Color(red: 0.45, green: 0.45, blue: 0.48)
-        case .sapphire:   return Color(red: 0.04, green: 0.48, blue: 0.98)
-        case .emerald:    return Color(red: 0.20, green: 0.78, blue: 0.35)
-        case .ruby:       return Color(red: 0.98, green: 0.22, blue: 0.28)
-        case .amethyst:   return Color(red: 0.69, green: 0.32, blue: 0.87)
-        case .amber:      return Color(red: 1.00, green: 0.62, blue: 0.04)
+        case .monochrome: return Color(white: 0.55)
+        case .titanium:   return Color(red: 0.68, green: 0.68, blue: 0.70)
+        case .graphite:   return Color(red: 0.38, green: 0.40, blue: 0.44)
+        case .sapphire:   return Color(red: 0.04, green: 0.52, blue: 1.00)
+        case .emerald:    return Color(red: 0.204, green: 0.780, blue: 0.349)
+        case .ruby:       return Color(red: 1.00, green: 0.23, blue: 0.30)
+        case .amethyst:   return Color(red: 0.70, green: 0.35, blue: 0.90)
+        case .amber:      return Color(red: 1.00, green: 0.65, blue: 0.05)
         }
+    }
+}
+
+// MARK: - ProfileColorCircleView (Professional 36x36 Apple Color Swatch)
+
+public struct ProfileColorCircleView: View {
+    public let accent: ProfileAccentColor
+    public let isSelected: Bool
+    public var size: CGFloat = 36
+    public var onSelect: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    public init(
+        accent: ProfileAccentColor,
+        isSelected: Bool,
+        size: CGFloat = 36,
+        onSelect: @escaping () -> Void = {}
+    ) {
+        self.accent = accent
+        self.isSelected = isSelected
+        self.size = size
+        self.onSelect = onSelect
+    }
+
+    public var body: some View {
+        Button(action: {
+            HapticManager.shared.touchLight()
+            onSelect()
+        }) {
+            ZStack {
+                // Anillo de selección exterior con resorte
+                if isSelected {
+                    Circle()
+                        .strokeBorder(
+                            colorScheme == .dark ? Color.white : Color.black,
+                            lineWidth: 2.5
+                        )
+                        .frame(width: size + 8, height: size + 8)
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                // Círculo de color principal sólido
+                Circle()
+                    .fill(accent.swatchColor)
+                    .frame(width: size, height: size)
+                    .shadow(
+                        color: accent.swatchColor.opacity(isSelected ? 0.45 : 0.20),
+                        radius: isSelected ? 8 : 4,
+                        y: isSelected ? 3 : 2
+                    )
+
+                // Borde especular fino de acabado Apple
+                Circle()
+                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.5)
+                    .frame(width: size, height: size)
+            }
+            .frame(width: size + 10, height: size + 10)
+            .animation(LiquidAnimation.snappySpring, value: isSelected)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -103,6 +172,9 @@ public final class ThemeManager: @unchecked Sendable {
             UserDefaults.standard.set(defaultAccent.rawValue, forKey: "smartbot_theme_accent")
         }
     }
+
+    // Apple Official Green (#34C759)
+    public let appleGreen = Color(red: 0.204, green: 0.780, blue: 0.349)
 
     public init() {
         let storedMode = UserDefaults.standard.string(forKey: "smartbot_theme_mode") ?? AppThemeMode.system.rawValue
@@ -190,6 +262,14 @@ public final class ThemeManager: @unchecked Sendable {
                 endPoint: .bottomTrailing
             )
         }
+    }
+}
+
+// MARK: - Global View Extension for Green Tint
+
+extension View {
+    public func smartBotGlobalTint() -> some View {
+        self.tint(ThemeManager.shared.appleGreen)
     }
 }
 

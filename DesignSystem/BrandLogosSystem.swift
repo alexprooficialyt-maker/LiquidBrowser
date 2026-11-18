@@ -1,12 +1,16 @@
 import SwiftUI
 
-// MARK: - SearchEngineType Enum
+// MARK: - SearchEngineType Enum (8 Official Engines)
 
 public enum SearchEngineType: String, CaseIterable, Identifiable, Codable, Sendable {
     case google     = "google"
     case duckDuckGo = "duckduckgo"
     case brave      = "brave"
     case ecosia     = "ecosia"
+    case bing       = "bing"
+    case startpage  = "startpage"
+    case qwant      = "qwant"
+    case perplexity = "perplexity"
 
     public var id: String { rawValue }
 
@@ -16,6 +20,10 @@ public enum SearchEngineType: String, CaseIterable, Identifiable, Codable, Senda
         case .duckDuckGo: return Loc.tr("onboarding_search_duck")
         case .brave:      return Loc.tr("onboarding_search_brave")
         case .ecosia:     return Loc.tr("onboarding_search_ecosia")
+        case .bing:       return Loc.tr("onboarding_search_bing")
+        case .startpage:  return Loc.tr("onboarding_search_startpage")
+        case .qwant:      return Loc.tr("onboarding_search_qwant")
+        case .perplexity: return Loc.tr("onboarding_search_perplexity")
         }
     }
 
@@ -25,6 +33,10 @@ public enum SearchEngineType: String, CaseIterable, Identifiable, Codable, Senda
         case .duckDuckGo: return Loc.tr("onboarding_search_duck_desc")
         case .brave:      return Loc.tr("onboarding_search_brave_desc")
         case .ecosia:     return Loc.tr("onboarding_search_ecosia_desc")
+        case .bing:       return Loc.tr("onboarding_search_bing_desc")
+        case .startpage:  return Loc.tr("onboarding_search_startpage_desc")
+        case .qwant:      return Loc.tr("onboarding_search_qwant_desc")
+        case .perplexity: return Loc.tr("onboarding_search_perplexity_desc")
         }
     }
 
@@ -34,6 +46,10 @@ public enum SearchEngineType: String, CaseIterable, Identifiable, Codable, Senda
         case .duckDuckGo: return "https://duckduckgo.com/?q="
         case .brave:      return "https://search.brave.com/search?q="
         case .ecosia:     return "https://www.ecosia.org/search?q="
+        case .bing:       return "https://www.bing.com/search?q="
+        case .startpage:  return "https://www.startpage.com/sp/search?query="
+        case .qwant:      return "https://www.qwant.com/?q="
+        case .perplexity: return "https://www.perplexity.ai/search?q="
         }
     }
 
@@ -97,12 +113,12 @@ public struct GoogleOfficialLogoView: View {
 
             let strokeW = (radius - innerRadius) * 0.92
 
-            // 1. Arco Rojo Superior (140° a 240° aprox)
+            // 1. Arco Rojo Superior (205° a 315°)
             var redPath = Path()
             redPath.addArc(center: center, radius: (radius + innerRadius) / 2, startAngle: .degrees(205), endAngle: .degrees(315), clockwise: false)
             context.stroke(redPath, with: .color(redColor), style: StrokeStyle(lineWidth: strokeW, lineCap: .butt))
 
-            // 2. Arco Amarillo Izquierdo (115° a 205°)
+            // 2. Arco Amarillo Izquierdo (130° a 210°)
             var yellowPath = Path()
             yellowPath.addArc(center: center, radius: (radius + innerRadius) / 2, startAngle: .degrees(130), endAngle: .degrees(210), clockwise: false)
             context.stroke(yellowPath, with: .color(yellowColor), style: StrokeStyle(lineWidth: strokeW, lineCap: .butt))
@@ -112,12 +128,11 @@ public struct GoogleOfficialLogoView: View {
             greenPath.addArc(center: center, radius: (radius + innerRadius) / 2, startAngle: .degrees(35), endAngle: .degrees(135), clockwise: false)
             context.stroke(greenPath, with: .color(greenColor), style: StrokeStyle(lineWidth: strokeW, lineCap: .butt))
 
-            // 4. Barra y Arco Azul Derecho (Horizontal y retorno)
+            // 4. Barra y Arco Azul Derecho
             var bluePath = Path()
             bluePath.addArc(center: center, radius: (radius + innerRadius) / 2, startAngle: .degrees(310), endAngle: .degrees(360), clockwise: false)
             context.stroke(bluePath, with: .color(blueColor), style: StrokeStyle(lineWidth: strokeW, lineCap: .butt))
 
-            // Barra transversal azul
             var barPath = Path()
             barPath.move(to: CGPoint(x: center.x - (radius * 0.05), y: center.y))
             barPath.addLine(to: CGPoint(x: center.x + radius, y: center.y))
@@ -146,57 +161,34 @@ public struct DuckDuckGoOfficialLogoView: View {
             let bounds = CGRect(origin: .zero, size: sz)
 
             if style == .fullColor {
-                // Fondo circular naranja oficial #DE5833
-                let circleColor = Color(red: 0.871, green: 0.345, blue: 0.200)
+                let circleColor = Color(red: 0.871, green: 0.345, blue: 0.200) // #DE5833
                 context.fill(Path(ellipseIn: bounds), with: .color(circleColor))
             }
 
-            let mainColor = style == .fullColor ? Color.white : (colorScheme == .dark ? Color.white : Color.black)
+            let strokeColor = style == .fullColor ? Color.white : (colorScheme == .dark ? Color.white : Color.black)
 
-            // Silueta de cabeza del pato
-            var duckHead = Path()
-            duckHead.move(to: CGPoint(x: w * 0.42, y: h * 0.28))
-            duckHead.addCurve(
-                to: CGPoint(x: w * 0.68, y: h * 0.38),
-                control1: CGPoint(x: w * 0.52, y: h * 0.18),
-                control2: CGPoint(x: w * 0.68, y: h * 0.24)
-            )
-            duckHead.addCurve(
-                to: CGPoint(x: w * 0.55, y: h * 0.66),
-                control1: CGPoint(x: w * 0.68, y: h * 0.50),
-                control2: CGPoint(x: w * 0.62, y: h * 0.62)
-            )
-            duckHead.addCurve(
-                to: CGPoint(x: w * 0.32, y: h * 0.55),
-                control1: CGPoint(x: w * 0.48, y: h * 0.70),
-                control2: CGPoint(x: w * 0.35, y: h * 0.66)
-            )
-            duckHead.closeSubpath()
-            context.fill(duckHead, with: .color(mainColor))
+            // Pato Dax (Cabeza y Pico)
+            var head = Path()
+            head.addArc(center: CGPoint(x: w * 0.48, y: h * 0.42), radius: w * 0.24, startAngle: .degrees(0), endAngle: .degrees(360), clockwise: false)
+            context.fill(head, with: .color(strokeColor))
 
-            // Pico naranja/amarillo
+            // Pico anaranjado/amarillo
             var beak = Path()
-            beak.move(to: CGPoint(x: w * 0.64, y: h * 0.34))
-            beak.addLine(to: CGPoint(x: w * 0.88, y: h * 0.40))
-            beak.addLine(to: CGPoint(x: w * 0.66, y: h * 0.46))
+            beak.move(to: CGPoint(x: w * 0.60, y: h * 0.38))
+            beak.addLine(to: CGPoint(x: w * 0.88, y: h * 0.48))
+            beak.addLine(to: CGPoint(x: w * 0.60, y: h * 0.54))
             beak.closeSubpath()
-            let beakColor = style == .fullColor ? Color(red: 0.98, green: 0.72, blue: 0.12) : mainColor
+            let beakColor = style == .fullColor ? Color(red: 0.988, green: 0.722, blue: 0.165) : strokeColor
             context.fill(beak, with: .color(beakColor))
 
-            // Ojo
-            let eyeRect = CGRect(x: w * 0.52, y: h * 0.30, width: w * 0.08, height: h * 0.08)
-            let eyeColor = style == .fullColor ? Color(red: 0.15, green: 0.15, blue: 0.15) : (colorScheme == .dark ? Color.black : Color.white)
-            context.fill(Path(ellipseIn: eyeRect), with: .color(eyeColor))
-
-            // Pajarita verde oficial (#548544)
-            if style == .fullColor {
-                var bowTie = Path()
-                bowTie.move(to: CGPoint(x: w * 0.38, y: h * 0.70))
-                bowTie.addLine(to: CGPoint(x: w * 0.52, y: h * 0.76))
-                bowTie.addLine(to: CGPoint(x: w * 0.38, y: h * 0.82))
-                bowTie.closeSubpath()
-                context.fill(bowTie, with: .color(Color(red: 0.33, green: 0.52, blue: 0.27)))
-            }
+            // Pajarita verde
+            var bowtie = Path()
+            bowtie.move(to: CGPoint(x: w * 0.36, y: h * 0.72))
+            bowtie.addLine(to: CGPoint(x: w * 0.60, y: h * 0.80))
+            bowtie.addLine(to: CGPoint(x: w * 0.36, y: h * 0.88))
+            bowtie.closeSubpath()
+            let bowtieColor = style == .fullColor ? Color(red: 0.353, green: 0.686, blue: 0.243) : strokeColor
+            context.fill(bowtie, with: .color(bowtieColor))
         }
         .frame(width: size, height: size)
     }
@@ -225,7 +217,6 @@ public struct BraveOfficialLogoView: View {
 
             let fillColor = style == .fullColor ? primaryOrange : (colorScheme == .dark ? Color.white : Color.black)
 
-            // Escudo exterior facetado
             var shield = Path()
             shield.move(to: CGPoint(x: w * 0.5, y: h * 0.06))
             shield.addLine(to: CGPoint(x: w * 0.86, y: h * 0.22))
@@ -237,7 +228,6 @@ public struct BraveOfficialLogoView: View {
 
             context.fill(shield, with: .color(fillColor))
 
-            // Facetas geométricas internas (León Brave)
             if style == .fullColor {
                 var crown = Path()
                 crown.move(to: CGPoint(x: w * 0.5, y: h * 0.15))
@@ -255,7 +245,6 @@ public struct BraveOfficialLogoView: View {
                 snout.closeSubpath()
                 context.fill(snout, with: .color(darkOrange))
             } else {
-                // Líneas de corte en modo monocromo
                 var line1 = Path()
                 line1.move(to: CGPoint(x: w * 0.5, y: h * 0.06))
                 line1.addLine(to: CGPoint(x: w * 0.5, y: h * 0.94))
@@ -295,12 +284,10 @@ public struct EcosiaOfficialLogoView: View {
 
             let mainColor = style == .fullColor ? leafGreen : (colorScheme == .dark ? Color.white : Color.black)
 
-            // Follaje del árbol (3 copas concéntricas)
             var foliage = Path()
             foliage.addArc(center: CGPoint(x: w * 0.5, y: h * 0.40), radius: w * 0.26, startAngle: .degrees(0), endAngle: .degrees(360), clockwise: false)
             context.fill(foliage, with: .color(mainColor))
 
-            // Tronco
             var trunk = Path()
             trunk.move(to: CGPoint(x: w * 0.46, y: h * 0.52))
             trunk.addLine(to: CGPoint(x: w * 0.54, y: h * 0.52))
@@ -314,7 +301,7 @@ public struct EcosiaOfficialLogoView: View {
     }
 }
 
-// MARK: - Unified Brand Logo View Selector
+// MARK: - Unified Brand Logo View Selector (Backward-Compatible Forwarder)
 
 public struct BrandLogoView: View {
     public let engine: SearchEngineType
@@ -328,15 +315,6 @@ public struct BrandLogoView: View {
     }
 
     public var body: some View {
-        switch engine {
-        case .google:
-            GoogleOfficialLogoView(style: style, size: size)
-        case .duckDuckGo:
-            DuckDuckGoOfficialLogoView(style: style, size: size)
-        case .brave:
-            BraveOfficialLogoView(style: style, size: size)
-        case .ecosia:
-            EcosiaOfficialLogoView(style: style, size: size)
-        }
+        SearchEngineLogoView(engine: engine, size: size, style: style)
     }
 }

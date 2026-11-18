@@ -102,6 +102,79 @@ public struct LiquidIconButton: View {
     }
 }
 
+// MARK: - LiquidCircularButton (Apple-Grade Circular Glass Button)
+
+public struct LiquidCircularButton: View {
+    public var type: LiquidIconType
+    public var size: CGFloat
+    public var iconSize: CGFloat
+    public var isHighlighted: Bool
+    public var isEnabled: Bool
+    public var action: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    public init(
+        _ type: LiquidIconType,
+        size: CGFloat = 38,
+        iconSize: CGFloat = 16,
+        isHighlighted: Bool = false,
+        isEnabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.type = type
+        self.size = size
+        self.iconSize = iconSize
+        self.isHighlighted = isHighlighted
+        self.isEnabled = isEnabled
+        self.action = action
+    }
+
+    public var body: some View {
+        let theme = ThemeEngine.shared
+
+        Button(action: {
+            guard isEnabled else { return }
+            HapticManager.shared.touchLight()
+            action()
+        }) {
+            ZStack {
+                Circle()
+                    .fill(.ultraThinMaterial)
+
+                Circle()
+                    .fill(
+                        isHighlighted
+                            ? (colorScheme == .dark ? Color.white : Color.black)
+                            : theme.glassMaterialFill(for: colorScheme)
+                    )
+
+                LiquidIconView(
+                    type,
+                    size: iconSize,
+                    color: isHighlighted
+                        ? (colorScheme == .dark ? Color.black : Color.white)
+                        : (isEnabled ? theme.textPrimary(for: colorScheme) : theme.textPrimary(for: colorScheme).opacity(0.28)),
+                    strokeWidth: 1.6
+                )
+            }
+            .frame(width: size, height: size)
+            .overlay {
+                Circle()
+                    .strokeBorder(theme.borderSpecular(for: colorScheme), lineWidth: 0.5)
+            }
+            .shadow(
+                color: theme.shadowColor(for: colorScheme),
+                radius: 8,
+                y: 3
+            )
+        }
+        .disabled(!isEnabled)
+        .buttonStyle(.plain)
+        .pressableFeedback()
+    }
+}
+
 extension View {
     public func liquidButton(
         isHighlighted: Bool = false,

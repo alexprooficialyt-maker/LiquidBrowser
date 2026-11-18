@@ -25,6 +25,10 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case duckDuckGoSearch
     case braveSearch
     case ecosiaSearch
+    case bingSearch
+    case startpageSearch
+    case qwantSearch
+    case perplexitySearch
 
     // 4. Seguridad, SSL y Anti-Rastreo
     case lockSSL
@@ -62,6 +66,7 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case bookmark
     case downloads
     case settings
+    case gear
     case palette
     case globeLanguage
     case resetFactory
@@ -210,6 +215,9 @@ public struct LiquidIconShape: Shape {
             p.addEllipse(in: CGRect(x: w * 0.28, y: h * 0.22, width: w * 0.44, height: h * 0.44))
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.54))
             p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.80))
+
+        case .bingSearch, .startpageSearch, .qwantSearch, .perplexitySearch:
+            p = LiquidIconShape(.search).path(in: rect)
 
         // --- SEGURIDAD Y SSL ---
         case .lockSSL:
@@ -465,7 +473,7 @@ public struct LiquidIconShape: Shape {
         case .downloads:
             p = LiquidIconShape(.download).path(in: rect)
 
-        case .settings:
+        case .settings, .gear:
             p.addEllipse(in: CGRect(x: w * 0.36, y: h * 0.36, width: w * 0.28, height: h * 0.28))
             p.move(to: CGPoint(x: w * 0.50, y: h * 0.16))
             p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.24))
