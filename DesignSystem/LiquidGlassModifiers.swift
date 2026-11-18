@@ -99,6 +99,12 @@ public struct LiquidSpecularHighlightModifier: ViewModifier {
 
 // MARK: - View Extensions for Liquid Glass
 
+public enum LiquidGlassConfig: Sendable {
+    case card
+    case capsule
+    case chip
+}
+
 extension View {
     public func liquidGlassCard(cornerRadius: CGFloat = 20) -> some View {
         modifier(LiquidGlassCardModifier(cornerRadius: cornerRadius))
@@ -110,5 +116,17 @@ extension View {
 
     public func liquidSpecularHighlight(cornerRadius: CGFloat = 16, lineWidth: CGFloat = 0.5) -> some View {
         modifier(LiquidSpecularHighlightModifier(cornerRadius: cornerRadius, lineWidth: lineWidth))
+    }
+
+    @ViewBuilder
+    public func liquidGlass(config: LiquidGlassConfig = .card) -> some View {
+        switch config {
+        case .card:
+            self.liquidGlassCard(cornerRadius: 20)
+        case .capsule:
+            self.liquidGlassCapsule(cornerRadius: 16)
+        case .chip:
+            self.liquidGlassCapsule(cornerRadius: 18)
+        }
     }
 }

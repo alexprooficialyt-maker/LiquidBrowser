@@ -49,8 +49,8 @@ public final class SSLInspectorEngine: @unchecked Sendable {
 
         var issuerSummary = "Entidad Emisora de Confianza de Apple"
         var isTrusted = true
-        var validFrom: Date? = Date()
-        var validTo: Date? = Calendar.current.date(byAdding: .year, value: 1, to: Date())
+        let validFrom: Date? = Date()
+        let validTo: Date? = Calendar.current.date(byAdding: .year, value: 1, to: Date())
 
         if let trust = serverTrust {
             var error: CFError?

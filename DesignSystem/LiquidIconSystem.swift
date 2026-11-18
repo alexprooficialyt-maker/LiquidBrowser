@@ -1,4 +1,5 @@
 import SwiftUI
+import LocalAuthentication
 
 // MARK: - LiquidIconType Enum (48 Handcrafted Vector Icons)
 
@@ -58,6 +59,7 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case pdfExport
     case history
     case bookmarks
+    case bookmark
     case downloads
     case settings
     case palette
@@ -66,6 +68,9 @@ public enum LiquidIconType: String, CaseIterable, Codable, Sendable {
     case checkmark
     case chevronRight
     case chevronDown
+    case chevronUp
+    case chevronLeft
+    case renewTab
 
     // 8. Perfiles
     case userProfile
@@ -446,13 +451,16 @@ public struct LiquidIconShape: Shape {
             p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.50))
             p.addLine(to: CGPoint(x: w * 0.66, y: h * 0.50))
 
-        case .bookmarks:
+        case .bookmarks, .bookmark:
             p.move(to: CGPoint(x: w * 0.24, y: h * 0.18))
             p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.18))
             p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.82))
             p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.64))
             p.addLine(to: CGPoint(x: w * 0.24, y: h * 0.82))
             p.closeSubpath()
+
+        case .renewTab:
+            p = LiquidIconShape(.reload).path(in: rect)
 
         case .downloads:
             p = LiquidIconShape(.download).path(in: rect)
@@ -501,6 +509,16 @@ public struct LiquidIconShape: Shape {
             p.move(to: CGPoint(x: w * 0.24, y: h * 0.38))
             p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.62))
             p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.38))
+
+        case .chevronUp:
+            p.move(to: CGPoint(x: w * 0.24, y: h * 0.62))
+            p.addLine(to: CGPoint(x: w * 0.50, y: h * 0.38))
+            p.addLine(to: CGPoint(x: w * 0.76, y: h * 0.62))
+
+        case .chevronLeft:
+            p.move(to: CGPoint(x: w * 0.62, y: h * 0.24))
+            p.addLine(to: CGPoint(x: w * 0.38, y: h * 0.50))
+            p.addLine(to: CGPoint(x: w * 0.62, y: h * 0.76))
 
         // --- PERFILES ---
         case .userProfile:

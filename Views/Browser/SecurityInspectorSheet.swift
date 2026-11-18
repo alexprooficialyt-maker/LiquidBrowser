@@ -166,9 +166,7 @@ public struct SecurityInspectorSheet: View {
                 Divider().background(theme.specularBorder(for: scheme))
 
                 if let validTo = info.validTo {
-                    let formatter = DateFormatter()
-                    formatter.dateStyle = .medium
-                    let dateStr = formatter.string(from: validTo)
+                    let dateStr = validTo.formatted(date: .abbreviated, time: .omitted)
                     detailRow(label: Loc.tr("ssl_validity"), value: "Hasta \(dateStr)", theme: theme, scheme: scheme)
                     Divider().background(theme.specularBorder(for: scheme))
                 }

@@ -231,7 +231,7 @@ public final class KeychainVault: @unchecked Sendable {
     @discardableResult
     public func wipeAllSecureData() -> Bool {
         deleteAppPIN()
-        delete(key: credentialsKey)
+        _ = delete(key: credentialsKey)
         UserDefaults.standard.removeObject(forKey: biometricsEnabledKey)
         UserDefaults.standard.removeObject(forKey: appLockEnabledKey)
         return true
@@ -288,6 +288,7 @@ public final class KeychainVault: @unchecked Sendable {
         return status == errSecSuccess
     }
 
+    @discardableResult
     private func delete(key: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
