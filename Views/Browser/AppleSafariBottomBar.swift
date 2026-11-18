@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - AppleSafariBottomBar (Full-Width Search Capsule + Original Safari Controls)
+// MARK: - AppleSafariBottomBar (Floating Pill Liquid Glass Bar with Circular < and > Buttons)
 
 public struct AppleSafariBottomBar: View {
     @Environment(\.colorScheme) private var systemColorScheme
@@ -35,32 +35,41 @@ public struct AppleSafariBottomBar: View {
         let totalTabsCount = StorageEngine.shared.tabsForActiveProfile().count
 
         VStack(spacing: 8) {
-            // 1. Buscador Protagonista de Ancho Completo
-            searchCapsule(theme: theme, scheme: scheme)
-                .padding(.horizontal, 16)
+            // 1. Omnibar Cápsula Central (Dirección / Búsqueda + Candado SSL + Recarga)
+            searchOmnibarCapsule(theme: theme, scheme: scheme)
 
-            // 2. Fila Inferior Original de Apple Safari
-            safariControlsRow(theme: theme, scheme: scheme, tabsCount: totalTabsCount)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 6)
-        }
-        .padding(.top, 8)
-        .background {
-            // Fondo de cristal translúcido ultraThinMaterial con borde especular superior
-            VStack(spacing: 0) {
-                Divider()
-                    .background(theme.borderSpecular(for: scheme))
-                Rectangle()
-                    .fill(.ultraThinMaterial)
+            // 2. Fila de Controles Safari con Botones Circulares Independientes < y >
+            if !isEditingSearch {
+                controlsRow(theme: theme, scheme: scheme, tabsCount: totalTabsCount)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .ignoresSafeArea(edges: .bottom)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background {
+            // Contenedor Flotante Estilo Píldora Liquid Glass de Apple
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                }
+                .shadow(
+                    color: scheme == .dark ? Color.black.opacity(0.35) : Color.black.opacity(0.10),
+                    radius: 14,
+                    x: 0,
+                    y: 6
+                )
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 6)
+        .animation(LiquidAnimation.interactiveSpring, value: isEditingSearch)
     }
 
-    // MARK: - 1. Cápsula del Buscador Protagonista a Todo lo Ancho
+    // MARK: - 1. Cápsula Omnibar Central
 
     @ViewBuilder
-    private func searchCapsule(theme: ThemeManager, scheme: ColorScheme) -> some View {
+    private func searchOmnibarCapsule(theme: ThemeManager, scheme: ColorScheme) -> some View {
         let currentTab = StorageEngine.shared.activeTab
         let isNewTab = currentTab?.isNewTab ?? true
 
@@ -97,7 +106,7 @@ public struct AppleSafariBottomBar: View {
                     } label: {
                         HStack(spacing: 6) {
                             Text(isNewTab ? Loc.tr("search_placeholder") : (coordinator.currentDisplayTitle.isEmpty ? (currentTab?.displayHost ?? Loc.tr("search_placeholder")) : coordinator.currentDisplayTitle))
-                                .font(.system(size: 15, weight: isNewTab ? .regular : .medium, design: .rounded))
+                                .font(.system(size: 14, weight: isNewTab ? .regular : .medium, design: .rounded))
                                 .foregroundStyle(isNewTab ? theme.textSecondary(for: scheme) : theme.textPrimary(for: scheme))
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -110,7 +119,7 @@ public struct AppleSafariBottomBar: View {
 
                 Spacer()
 
-                // Botón Derecho: Limpiar si edita, o Recarga/Parar
+                // Botón Derecho: Limpiar/Cancelar si edita, o Recarga/Parar
                 if isEditingSearch {
                     if !searchInput.isEmpty {
                         Button {
@@ -123,10 +132,10 @@ public struct AppleSafariBottomBar: View {
                         .buttonStyle(.plain)
                     }
 
-                    Button("Cancelar") {
+                    Button(Loc.tr("cancel")) {
                         cancelSearch()
                     }
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(theme.textPrimary(for: scheme))
                 } else {
                     // Botón de Recarga / Parar
@@ -145,10 +154,14 @@ public struct AppleSafariBottomBar: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
             .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .liquidGlassCapsule(cornerRadius: 16)
+            .frame(height: 42)
+            .background(theme.surfaceElevated(for: scheme))
+            .clipShape(Capsule())
+            .overlay {
+                Capsule().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+            }
 
             // Barra de Progreso en el Borde Inferior de la Cápsula
             if coordinator.currentIsLoading && coordinator.currentProgress > 0 && coordinator.currentProgress < 1.0 {
@@ -159,8 +172,8 @@ public struct AppleSafariBottomBar: View {
                         .animation(LiquidAnimation.interactiveSpring, value: coordinator.currentProgress)
                 }
                 .frame(height: 2)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .padding(.horizontal, 2)
+                .clipShape(Capsule())
+                .padding(.horizontal, 6)
             }
         }
     }
@@ -185,56 +198,61 @@ public struct AppleSafariBottomBar: View {
         cancelSearch()
     }
 
-    // MARK: - 2. Fila Inferior Original de Apple Safari
+    // MARK: - 2. Fila de Controles Safari con Botones Circulares Independientes < y >
 
     @ViewBuilder
-    private func safariControlsRow(theme: ThemeManager, scheme: ColorScheme, tabsCount: Int) -> some View {
-        HStack {
-            // 1. Atrás
-            Button {
-                HapticManager.shared.touchLight()
+    private func controlsRow(theme: ThemeManager, scheme: ColorScheme, tabsCount: Int) -> some View {
+        HStack(spacing: 0) {
+            // Botón Circular Atrás (<)
+            LiquidCircularButton(
+                .chevronLeft,
+                size: 38,
+                iconSize: 16,
+                isEnabled: coordinator.currentCanGoBack
+            ) {
                 coordinator.goBack()
-            } label: {
-                LiquidIconView(.back, size: 20, color: coordinator.currentCanGoBack ? theme.textPrimary(for: scheme) : theme.textPrimary(for: scheme).opacity(0.25))
-                    .frame(width: 44, height: 38)
             }
-            .buttonStyle(.plain)
-            .disabled(!coordinator.currentCanGoBack)
 
             Spacer()
 
-            // 2. Adelante
-            Button {
-                HapticManager.shared.touchLight()
+            // Botón Circular Adelante (>)
+            LiquidCircularButton(
+                .chevronRight,
+                size: 38,
+                iconSize: 16,
+                isEnabled: coordinator.currentCanGoForward
+            ) {
                 coordinator.goForward()
-            } label: {
-                LiquidIconView(.forward, size: 20, color: coordinator.currentCanGoForward ? theme.textPrimary(for: scheme) : theme.textPrimary(for: scheme).opacity(0.25))
-                    .frame(width: 44, height: 38)
             }
-            .buttonStyle(.plain)
-            .disabled(!coordinator.currentCanGoForward)
 
             Spacer()
 
-            // 3. Botón de Herramientas (Icono original de ajustes/controles de Safari, NUNCA compartir)
-            Button {
-                HapticManager.shared.touchLight()
+            // Botón Circular Herramientas (NUNCA compartir)
+            LiquidCircularButton(
+                .toolsMenu,
+                size: 38,
+                iconSize: 17,
+                isEnabled: true
+            ) {
                 onOpenTools()
-            } label: {
-                LiquidIconView(.toolsMenu, size: 20, color: theme.textPrimary(for: scheme))
-                    .frame(width: 44, height: 38)
             }
-            .buttonStyle(.plain)
 
             Spacer()
 
-            // 4. Espacios / Pestañas con Contador Dinámico
+            // Botón Circular Espacios / Pestañas con Contador Numérico
             Button {
                 HapticManager.shared.touchMedium()
                 onOpenSpaces()
             } label: {
                 ZStack {
-                    LiquidIconView(.tabs, size: 20, color: theme.textPrimary(for: scheme))
+                    Circle()
+                        .fill(theme.surfaceElevated(for: scheme))
+                        .frame(width: 38, height: 38)
+                        .overlay {
+                            Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                        }
+
+                    LiquidIconView(.tabs, size: 19, color: theme.textPrimary(for: scheme))
 
                     // Contador numérico de pestañas
                     Text("\(tabsCount)")
@@ -242,21 +260,22 @@ public struct AppleSafariBottomBar: View {
                         .foregroundStyle(theme.textPrimary(for: scheme))
                         .offset(x: -0.5, y: 1.0)
                 }
-                .frame(width: 44, height: 38)
             }
             .buttonStyle(.plain)
 
             Spacer()
 
-            // 5. Nueva Pestaña (+)
-            Button {
-                HapticManager.shared.touchLight()
+            // Botón Circular Nueva Pestaña (+)
+            LiquidCircularButton(
+                .newTab,
+                size: 38,
+                iconSize: 17,
+                isEnabled: true
+            ) {
                 onNewTab()
-            } label: {
-                LiquidIconView(.newTab, size: 20, color: theme.textPrimary(for: scheme))
-                    .frame(width: 44, height: 38)
             }
-            .buttonStyle(.plain)
         }
+        .padding(.horizontal, 4)
+        .padding(.top, 2)
     }
 }

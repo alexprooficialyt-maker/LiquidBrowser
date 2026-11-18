@@ -312,8 +312,10 @@ public struct SpacesCarouselView: View {
     private func unlockPrivateSpace() {
         KeychainVault.shared.authenticateWithBiometrics(reason: "Desbloquear Espacio Privado") { success in
             if success {
-                self.isPrivateUnlocked = true
-                HapticManager.shared.notifySuccess()
+                Task { @MainActor in
+                    self.isPrivateUnlocked = true
+                    HapticManager.shared.notifySuccess()
+                }
             }
         }
     }
