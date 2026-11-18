@@ -17,7 +17,7 @@ public final class StorageEngine: @unchecked Sendable {
     private let onboardingKey = "smartbot_has_completed_onboarding_v2"
     private let activeTabIDKey = "smartbot_storage_active_tab_id_v2"
 
-    // MARK: - In-Memory State
+    // MARK: - In-Memory Tracked State
 
     public var profiles: [UserProfile] = [] {
         didSet { persistProfiles() }
@@ -59,14 +59,19 @@ public final class StorageEngine: @unchecked Sendable {
         }
     }
 
+    /// Propiedad reactiva observada por SwiftUI; persiste en UserDefaults sincrónicamente
     public var hasCompletedOnboarding: Bool {
-        get { UserDefaults.standard.bool(forKey: onboardingKey) }
-        set { UserDefaults.standard.set(newValue, forKey: onboardingKey) }
+        didSet {
+            UserDefaults.standard.set(hasCompletedOnboarding, forKey: onboardingKey)
+        }
     }
 
     // MARK: - Initializer
 
     public init() {
+        // Cargar estado de onboarding
+        self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: onboardingKey)
+
         // 1. Cargar Perfiles
         let loadedProfiles = Self.loadJSON([UserProfile].self, forKey: profilesKey) ?? []
         if loadedProfiles.isEmpty {
@@ -132,13 +137,20 @@ public final class StorageEngine: @unchecked Sendable {
 
     // MARK: - Profile Management
 
-    public func createProfile(name: String, age: Int?, description: String, color: ProfileAccentColor, icon: LiquidIconType = .userProfile) -> UserProfile {
+    @discardableResult
+    public func createProfile(
+        name: String,
+        color: ProfileAccentColor = .monochrome,
+        icon: LiquidIconType = .userProfile,
+        hasPIN: Bool = false
+    ) -> UserProfile {
         let profile = UserProfile(
             name: name,
-            age: age,
-            description: description,
             accentColor: color,
             iconType: icon,
+            hasPIN: hasPIN,
+            isLocked: false,
+            requiresBiometricsOrPIN: hasPIN,
             isDefault: false
         )
         profiles.append(profile)
@@ -147,7 +159,7 @@ public final class StorageEngine: @unchecked Sendable {
         let defaultSpaces = SpaceModel.defaultSpaces(for: profile.id)
         spaces.append(contentsOf: defaultSpaces)
 
-        // Crear sitios guardados por defecto
+        // Crear sitios guardados por defecto (Apple, Wikipedia, GitHub, YouTube)
         let defaultSites = SavedSite.defaultSites(for: profile.id)
         savedSites.append(contentsOf: defaultSites)
 
@@ -158,7 +170,7 @@ public final class StorageEngine: @unchecked Sendable {
         guard profiles.contains(where: { $0.id == id }) else { return }
         activeProfileID = id
 
-        // Si no hay pestañas en este perfil, crear una
+        // Si no hay pestañas en este perfil, crear una pestaña limpia
         let profileTabs = tabs.filter { $0.profileID == id }
         if profileTabs.isEmpty {
             let newTab = TabModel(url: nil, title: "Nueva Pestaña", profileID: id)
@@ -175,8 +187,16 @@ public final class StorageEngine: @unchecked Sendable {
         }
     }
 
+    public func setProfileLock(id: UUID, isLocked: Bool, hasPIN: Bool) {
+        if let idx = profiles.firstIndex(where: { $0.id == id }) {
+            profiles[idx].isLocked = isLocked
+            profiles[idx].hasPIN = hasPIN
+            profiles[idx].requiresBiometricsOrPIN = hasPIN
+        }
+    }
+
     public func deleteProfile(id: UUID) {
-        guard profiles.count > 1 else { return } // No eliminar el último
+        guard profiles.count > 1 else { return } // No eliminar el último perfil
         profiles.removeAll(where: { $0.id == id })
         tabs.removeAll(where: { $0.profileID == id })
         spaces.removeAll(where: { $0.profileID == id })
@@ -202,7 +222,12 @@ public final class StorageEngine: @unchecked Sendable {
     }
 
     @discardableResult
-    public func createTab(url: URL? = nil, title: String = "Nueva Pestaña", spaceID: UUID? = nil, isPrivate: Bool = false) -> TabModel {
+    public func createTab(
+        url: URL? = nil,
+        title: String = "Nueva Pestaña",
+        spaceID: UUID? = nil,
+        isPrivate: Bool = false
+    ) -> TabModel {
         let newTab = TabModel(
             url: url,
             title: title,
@@ -255,7 +280,12 @@ public final class StorageEngine: @unchecked Sendable {
     }
 
     @discardableResult
-    public func createSpace(name: String, icon: LiquidIconType, isPrivate: Bool = false, color: ProfileAccentColor = .monochrome) -> SpaceModel {
+    public func createSpace(
+        name: String,
+        icon: LiquidIconType,
+        isPrivate: Bool = false,
+        color: ProfileAccentColor = .monochrome
+    ) -> SpaceModel {
         let newSpace = SpaceModel(
             name: name,
             icon: icon,
@@ -388,7 +418,7 @@ public final class StorageEngine: @unchecked Sendable {
 
     @MainActor
     public func factoryResetAllData() {
-        // 1. Limpiar Keychain
+        // 1. Limpiar Keychain de forma segura
         KeychainVault.shared.wipeAllSecureData()
 
         // 2. Limpiar todos los datos persistentes de UserDefaults
@@ -427,7 +457,7 @@ public final class StorageEngine: @unchecked Sendable {
         self.savedSites = SavedSite.defaultSites(for: defaultProfile.id)
         self.hasCompletedOnboarding = false
 
-        // Notificar respuesta háptica y reseteo
+        // Notificar respuesta háptica
         HapticManager.shared.notifyWarning()
     }
 

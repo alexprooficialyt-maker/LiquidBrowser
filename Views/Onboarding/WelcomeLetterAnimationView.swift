@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - WelcomeLetterAnimationView (Cinematic Letter-by-Letter Entrance)
+// MARK: - WelcomeLetterAnimationView (Cinematic Letter-by-Letter Apple Welcome)
 
 public struct WelcomeLetterAnimationView: View {
     public let userName: String
@@ -11,9 +11,14 @@ public struct WelcomeLetterAnimationView: View {
     @State private var isGlowActive: Bool = false
     @State private var isFadingOut: Bool = false
 
-    private var fullMessage: String {
-        let template = Loc.tr("welcome_title")
-        return "\(template), \(userName)"
+    private var fullGreeting: String {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = trimmed.isEmpty ? "SmartBot" : trimmed
+        let format = Loc.tr("welcome_title") // "Hola, %@" o "Bienvenido"
+        if format.contains("%@") {
+            return String(format: format, name)
+        }
+        return "\(format), \(name)"
     }
 
     public init(userName: String, onComplete: @escaping () -> Void) {
@@ -24,26 +29,26 @@ public struct WelcomeLetterAnimationView: View {
     public var body: some View {
         let theme = ThemeManager.shared
         let scheme = theme.effectiveScheme(systemScheme: systemColorScheme)
-        let characters = Array(fullMessage)
+        let characters = Array(fullGreeting)
 
         ZStack {
-            // Fondo Negro/Blanco Puro
+            // Fondo monocromo puro con desenfoque de cristal
             theme.background(for: scheme)
                 .ignoresSafeArea()
 
-            VStack(spacing: 32) {
+            VStack(spacing: 36) {
                 Spacer()
 
-                // Icono Central de SmartBot con Reflejo Especular
+                // Icono Central de SmartBot con Reflejo Especular Líquido
                 ZStack {
                     Circle()
                         .fill(theme.glassMaterialFill(for: scheme))
-                        .frame(width: 80, height: 80)
+                        .frame(width: 88, height: 88)
                         .overlay {
                             Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
                         }
 
-                    LiquidIconView(.shieldActive, size: 36, color: theme.textPrimary(for: scheme))
+                    LiquidIconView(.shieldActive, size: 40, color: theme.textPrimary(for: scheme))
                 }
                 .scaleEffect(revealedIndices.count > 0 ? 1.0 : 0.6)
                 .opacity(revealedIndices.count > 0 ? 1.0 : 0.0)
@@ -56,7 +61,7 @@ public struct WelcomeLetterAnimationView: View {
                         let charString = String(char)
 
                         Text(charString == " " ? "\u{00A0}" : charString)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundStyle(theme.textPrimary(for: scheme))
                             .opacity(isRevealed ? 1.0 : 0.0)
                             .blur(radius: isRevealed ? 0 : 8)
@@ -70,7 +75,7 @@ public struct WelcomeLetterAnimationView: View {
 
                 // Subtítulo con desvanecimiento elegante
                 Text(Loc.tr("app_tagline"))
-                    .font(.system(size: 14, weight: .regular, design: .default))
+                    .font(.system(size: 15, weight: .medium, design: .default))
                     .foregroundStyle(theme.textSecondary(for: scheme))
                     .opacity(isGlowActive ? 1.0 : 0.0)
                     .offset(y: isGlowActive ? 0 : 8)
@@ -79,7 +84,7 @@ public struct WelcomeLetterAnimationView: View {
                 Spacer()
             }
             .opacity(isFadingOut ? 0.0 : 1.0)
-            .animation(.easeInOut(duration: 0.5), value: isFadingOut)
+            .animation(.easeInOut(duration: 0.4), value: isFadingOut)
         }
         .onAppear {
             startLetterSequence(total: characters.count)
@@ -87,18 +92,18 @@ public struct WelcomeLetterAnimationView: View {
     }
 
     private func startLetterSequence(total: Int) {
-        let baseDelay = 0.035
+        let baseDelay = 0.032
 
         for i in 0..<total {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * baseDelay + 0.2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * baseDelay + 0.15) {
                 _ = revealedIndices.insert(i)
-                if i % 6 == 0 {
+                if i % 5 == 0 {
                     HapticManager.shared.touchSoft()
                 }
             }
         }
 
-        let totalTime = Double(total) * baseDelay + 0.35
+        let totalTime = Double(total) * baseDelay + 0.30
 
         // Activar subtítulo y brillo
         DispatchQueue.main.asyncAfter(deadline: .now() + totalTime) {
@@ -108,12 +113,12 @@ public struct WelcomeLetterAnimationView: View {
             }
         }
 
-        // Salida fluida al dashboard del navegador
-        DispatchQueue.main.asyncAfter(deadline: .now() + totalTime + 1.8) {
-            withAnimation(.easeInOut(duration: 0.5)) {
+        // Transición fluida e instantánea al navegador
+        DispatchQueue.main.asyncAfter(deadline: .now() + totalTime + 1.4) {
+            withAnimation(.easeInOut(duration: 0.4)) {
                 isFadingOut = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                 onComplete()
             }
         }

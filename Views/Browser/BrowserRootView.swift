@@ -61,6 +61,9 @@ public struct BrowserRootView: View {
                         },
                         onOpenProfileSwitcher: {
                             isShowingProfileSwitcher = true
+                        },
+                        onOpenSettings: {
+                            isShowingSettings = true
                         }
                     )
                 }

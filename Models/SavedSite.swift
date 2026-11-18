@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - SavedSite Model (Páginas Guardadas y Favoritos)
+// MARK: - SavedSite Model (Páginas Favoritas con Soporte de Favicon Oficial)
 
 public struct SavedSite: Identifiable, Codable, Sendable, Hashable {
     public let id: UUID
@@ -30,15 +30,53 @@ public struct SavedSite: Identifiable, Codable, Sendable, Hashable {
     }
 
     public var displayHost: String {
-        url.host?.replacingOccurrences(of: "www.", with: "") ?? url.absoluteString
+        guard let host = url.host else { return url.absoluteString }
+        return host.replacingOccurrences(of: "www.", with: "")
     }
 
+    public var domain: String {
+        displayHost
+    }
+
+    /// URL para descarga directa de Favicon en alta resolución desde Google S2
+    public var googleFaviconURL: URL? {
+        guard let host = url.host else { return nil }
+        return URL(string: "https://www.google.com/s2/favicons?domain=\(host)&sz=128")
+    }
+
+    /// URL del favicon nativo del sitio
+    public var directFaviconURL: URL? {
+        guard let scheme = url.scheme, let host = url.host else { return nil }
+        return URL(string: "\(scheme)://\(host)/favicon.ico")
+    }
+
+    /// Sitios Predeterminados de SmartBot Browser (Apple, Wikipedia, GitHub, YouTube)
     public static func defaultSites(for profileID: UUID) -> [SavedSite] {
         [
-            SavedSite(title: "Apple", url: URL(string: "https://www.apple.com")!, profileID: profileID, position: 0),
-            SavedSite(title: "Wikipedia", url: URL(string: "https://es.wikipedia.org")!, profileID: profileID, position: 1),
-            SavedSite(title: "GitHub", url: URL(string: "https://github.com")!, profileID: profileID, position: 2),
-            SavedSite(title: "Hacker News", url: URL(string: "https://news.ycombinator.com")!, profileID: profileID, position: 3)
+            SavedSite(
+                title: "Apple",
+                url: URL(string: "https://www.apple.com")!,
+                profileID: profileID,
+                position: 0
+            ),
+            SavedSite(
+                title: "Wikipedia",
+                url: URL(string: "https://es.wikipedia.org")!,
+                profileID: profileID,
+                position: 1
+            ),
+            SavedSite(
+                title: "GitHub",
+                url: URL(string: "https://github.com")!,
+                profileID: profileID,
+                position: 2
+            ),
+            SavedSite(
+                title: "YouTube",
+                url: URL(string: "https://www.youtube.com")!,
+                profileID: profileID,
+                position: 3
+            )
         ]
     }
 }

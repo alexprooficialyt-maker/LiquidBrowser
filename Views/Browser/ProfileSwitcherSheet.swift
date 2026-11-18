@@ -9,7 +9,6 @@ public struct ProfileSwitcherSheet: View {
     @State private var storage = StorageEngine.shared
     @State private var isCreatingProfile: Bool = false
     @State private var newProfileName: String = ""
-    @State private var newProfileDesc: String = ""
     @State private var newProfileColor: ProfileAccentColor = .sapphire
     @State private var newProfileIcon: LiquidIconType = .briefcase
 
@@ -96,7 +95,7 @@ public struct ProfileSwitcherSheet: View {
                         }
                     }
 
-                    Text(profile.description.isEmpty ? "Perfil independiente" : profile.description)
+                    Text(profile.subtitleText)
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(theme.textSecondary(for: scheme))
                 }
@@ -125,35 +124,22 @@ public struct ProfileSwitcherSheet: View {
             ZStack {
                 theme.background(for: scheme).ignoresSafeArea()
 
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 6) {
+                VStack(spacing: 24) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text(Loc.tr("profile_name"))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(theme.textSecondary(for: scheme))
 
                         TextField("Ej. Trabajo, Estudio", text: $newProfileName)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
                             .background(theme.surfaceElevated(for: scheme))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .foregroundStyle(theme.textPrimary(for: scheme))
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Descripción")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(theme.textSecondary(for: scheme))
-
-                        TextField("Ej. Pestañas y proyectos laborales", text: $newProfileDesc)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(theme.surfaceElevated(for: scheme))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .foregroundStyle(theme.textPrimary(for: scheme))
-                    }
-
-                    // Selector de color
-                    VStack(alignment: .leading, spacing: 8) {
+                    // Selector de color con círculos de 36x36
+                    VStack(alignment: .leading, spacing: 10) {
                         Text(Loc.tr("profile_color"))
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(theme.textSecondary(for: scheme))
@@ -161,19 +147,15 @@ public struct ProfileSwitcherSheet: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
                                 ForEach(ProfileAccentColor.allCases) { color in
-                                    Circle()
-                                        .fill(color.swatchColor)
-                                        .frame(width: 32, height: 32)
-                                        .overlay {
-                                            if newProfileColor == color {
-                                                Circle()
-                                                    .strokeBorder(theme.textPrimary(for: scheme), lineWidth: 2)
-                                                    .padding(-4)
-                                            }
-                                        }
-                                        .onTapGesture {
-                                            newProfileColor = color
-                                        }
+                                    ProfileColorCircleView(
+                                        color: color,
+                                        isSelected: newProfileColor == color,
+                                        size: 36
+                                    )
+                                    .onTapGesture {
+                                        HapticManager.shared.touchSelection()
+                                        newProfileColor = color
+                                    }
                                 }
                             }
                             .padding(.vertical, 4)
@@ -197,8 +179,6 @@ public struct ProfileSwitcherSheet: View {
                         guard !name.isEmpty else { return }
                         _ = storage.createProfile(
                             name: name,
-                            age: nil,
-                            description: newProfileDesc,
                             color: newProfileColor,
                             icon: newProfileIcon
                         )

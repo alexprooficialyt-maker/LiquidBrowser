@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - SmartHomeDashboardView (Personalized Home with Greeting, Searches & Saved Sites)
+// MARK: - SmartHomeDashboardView (Personalized Home with Greeting, Searches, Favicons & Settings)
 
 public struct SmartHomeDashboardView: View {
     @Environment(\.colorScheme) private var systemColorScheme
@@ -8,6 +8,7 @@ public struct SmartHomeDashboardView: View {
     public var onSelectQuery: (String) -> Void
     public var onSelectURL: (URL) -> Void
     public var onOpenProfileSwitcher: () -> Void
+    public var onOpenSettings: () -> Void
 
     @State private var storage = StorageEngine.shared
     @State private var isAddingSite: Bool = false
@@ -17,16 +18,18 @@ public struct SmartHomeDashboardView: View {
     public init(
         onSelectQuery: @escaping (String) -> Void,
         onSelectURL: @escaping (URL) -> Void,
-        onOpenProfileSwitcher: @escaping () -> Void
+        onOpenProfileSwitcher: @escaping () -> Void,
+        onOpenSettings: @escaping () -> Void = {}
     ) {
         self.onSelectQuery = onSelectQuery
         self.onSelectURL = onSelectURL
         self.onOpenProfileSwitcher = onOpenProfileSwitcher
+        self.onOpenSettings = onOpenSettings
     }
 
     private var smartGreeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
-        let name = storage.activeProfile.name
+        let name = storage.activeProfile.displayName
         if hour >= 5 && hour < 12 {
             return String(format: Loc.tr("home_greeting_morning"), name)
         } else if hour >= 12 && hour < 20 {
@@ -45,14 +48,14 @@ public struct SmartHomeDashboardView: View {
 
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
-                // 1. Barra de Perfil Superior & Saludo
+                // 1. Barra de Perfil Superior, Ajustes & Saludo
                 headerProfileBar(profile: activeProfile, theme: theme, scheme: scheme)
                     .padding(.top, 16)
 
                 // 2. Búsquedas Recientes
                 recentSearchesSection(searches: recentSearches, theme: theme, scheme: scheme)
 
-                // 3. Páginas Guardadas Abajo (Favoritos Editables)
+                // 3. Páginas Guardadas (Favoritos con Favicons Oficiales HD)
                 savedSitesSection(sites: savedSites, theme: theme, scheme: scheme)
 
                 Spacer(minLength: 80)
@@ -64,12 +67,13 @@ public struct SmartHomeDashboardView: View {
         }
     }
 
-    // MARK: - 1. Cabecera con Perfil y Saludo Inteligente
+    // MARK: - 1. Cabecera con Perfil, Ajustes y Saludo Inteligente
 
     @ViewBuilder
     private func headerProfileBar(profile: UserProfile, theme: ThemeManager, scheme: ColorScheme) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
+                // Selector de Perfil Activo
                 Button {
                     HapticManager.shared.touchLight()
                     onOpenProfileSwitcher()
@@ -79,7 +83,7 @@ public struct SmartHomeDashboardView: View {
                             .fill(profile.accentColor.swatchColor)
                             .frame(width: 10, height: 10)
 
-                        Text(profile.name)
+                        Text(profile.displayName)
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(theme.textPrimary(for: scheme))
 
@@ -96,6 +100,24 @@ public struct SmartHomeDashboardView: View {
                 .buttonStyle(.plain)
 
                 Spacer()
+
+                // Botón Superior Derecho de Ajustes (Engranaje)
+                Button {
+                    HapticManager.shared.touchLight()
+                    onOpenSettings()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(theme.surfaceElevated(for: scheme))
+                            .frame(width: 36, height: 36)
+                            .overlay {
+                                Circle().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
+                            }
+
+                        LiquidIconView(.gear, size: 17, color: theme.textPrimary(for: scheme))
+                    }
+                }
+                .buttonStyle(.plain)
             }
 
             Text(smartGreeting)
@@ -130,53 +152,50 @@ public struct SmartHomeDashboardView: View {
 
             if searches.isEmpty {
                 HStack {
+                    Spacer()
                     Text(Loc.tr("home_no_searches"))
                         .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(theme.textSecondary(for: scheme))
+                        .foregroundStyle(theme.textSecondary(for: scheme).opacity(0.8))
+                        .padding(.vertical, 16)
                     Spacer()
                 }
-                .padding(14)
-                .liquidGlassCard(cornerRadius: 14)
+                .liquidGlassCard(cornerRadius: 16)
             } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(searches) { record in
-                            Button {
-                                HapticManager.shared.touchLight()
-                                onSelectQuery(record.query)
-                            } label: {
-                                HStack(spacing: 8) {
-                                    BrandLogoView(engine: record.engine, style: .monochrome, size: 14)
+                VStack(spacing: 8) {
+                    ForEach(searches) { record in
+                        Button {
+                            HapticManager.shared.touchLight()
+                            onSelectQuery(record.query)
+                        } label: {
+                            HStack(spacing: 12) {
+                                LiquidIconView(.historyClock, size: 14, color: theme.textSecondary(for: scheme))
 
-                                    Text(record.query)
-                                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                                        .foregroundStyle(theme.textPrimary(for: scheme))
-                                        .lineLimit(1)
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(theme.surfaceElevated(for: scheme))
-                                .clipShape(Capsule())
-                                .overlay {
-                                    Capsule().strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
-                                }
+                                Text(record.query)
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .foregroundStyle(theme.textPrimary(for: scheme))
+                                    .lineLimit(1)
+
+                                Spacer()
+
+                                LiquidIconView(.chevronRight, size: 12, color: theme.textSecondary(for: scheme).opacity(0.5))
                             }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    storage.deleteSearchRecord(id: record.id)
-                                } label: {
-                                    Label(Loc.tr("delete"), systemImage: "trash")
-                                }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(theme.surfaceElevated(for: scheme))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
         }
     }
 
-    // MARK: - 3. Páginas Guardadas Abajo (Favoritos Editables)
+    // MARK: - 3. Páginas Guardadas con Favicons Oficiales HD
 
     @ViewBuilder
     private func savedSitesSection(sites: [SavedSite], theme: ThemeManager, scheme: ColorScheme) -> some View {
@@ -209,19 +228,14 @@ public struct SmartHomeDashboardView: View {
                         onSelectURL(site.url)
                     } label: {
                         VStack(spacing: 8) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .fill(theme.surfaceElevated(for: scheme))
-                                    .frame(width: 58, height: 58)
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .strokeBorder(theme.borderSpecular(for: scheme), lineWidth: 0.5)
-                                    }
-
-                                Text(String(site.title.prefix(1)).uppercased())
-                                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    .foregroundStyle(theme.textPrimary(for: scheme))
-                            }
+                            // Favicon Oficial de Alta Resolución
+                            FaviconView(
+                                url: site.url,
+                                title: site.title,
+                                size: 58,
+                                cornerRadius: 16,
+                                showBorder: true
+                            )
 
                             Text(site.title)
                                 .font(.system(size: 11, weight: .medium, design: .rounded))
