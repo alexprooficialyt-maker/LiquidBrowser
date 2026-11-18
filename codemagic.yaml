@@ -2,7 +2,7 @@ workflows:
   ios-build:
     name: LiquidBrowser — Release IPA
     max_build_duration: 60
-    instance_type: mac_mini_m1
+    instance_type: mac_mini_m2
 
     environment:
       xcode: latest
@@ -16,7 +16,7 @@ workflows:
     scripts:
       - name: Setup Tools
         script: |
-          brew install xcodegen
+          which xcodegen || brew install xcodegen
 
       - name: Generate Xcode Project
         script: |
@@ -34,13 +34,15 @@ workflows:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_ENTITLEMENTS=""
+            CODE_SIGN_ENTITLEMENTS="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Package IPA
         script: |
           mkdir -p Payload
           cp -r build/Build/Products/Release-iphoneos/LiquidBrowser.app Payload/
-          zip -r LiquidBrowser.ipa Payload
+          zip -qr LiquidBrowser.ipa Payload
           rm -rf Payload
 
     artifacts:
